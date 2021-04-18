@@ -8,8 +8,8 @@ ITEMS_JSON_TEMPLATE = Template('items_T$store_number.json')
 
 @app.route('/T2451-loc-check')
 def my_route1():
-  upc = request.args.get('upc', default = '*', type = str)
-  if upc == '*':
+  upc = request.args.get('upc', default=None, type=str)
+  if upc if None:
     return 'ERROR. No UPC given'
 
   info = _get_item_info(upc, '2451')
@@ -21,15 +21,15 @@ def my_route1():
 
 @app.route('/T3277-loc-check')
 def my_route2():
-  upc = request.args.get('upc', default = '*', type = str)
-  if upc == '*':
+  upc = request.args.get('upc', default=None, type=str)
+  if upc is None:
     return 'ERROR. No UPC given'
 
-  name, section, location = _get_item_info(upc, '3277')
-  if location is None:
-    return 'Item not present'
+  info = _get_item_info(upc, '3277')
+  if info is None:
+    return 'Item not present / Discontinued'
 
-  return f'{name}<br/><br/>{section}<br/><br/>{location}'
+  return '<br/><br/>'.join(info.values())
 
 
 def _get_item_info(upc, store_number):
