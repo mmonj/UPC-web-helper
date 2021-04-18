@@ -15,7 +15,7 @@ def my_route():
   if location is None:
   	return 'Item not present'
 
-  return f'{name}\n\n{section}\n\n{location}'
+  return f'{name}<br/><br/>{section}<br/><br/>{location}'
 
 
 def _get_item_info(upc):
