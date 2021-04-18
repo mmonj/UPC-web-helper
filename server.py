@@ -16,7 +16,7 @@ def my_route1():
   if info is None:
     return 'Item not present / Discontinued'
 
-  return '<br/><br/>'.join(info)
+  return '<br/><br/>'.join(info.values())
 
 
 @app.route('/T3277-loc-check')
