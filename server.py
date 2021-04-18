@@ -6,8 +6,8 @@ app = Flask(__name__)
 ITEMS_JSON_TEMPLATE = Template('items_T$store_number.json')
 
 
-@app.route('/T2451_loc_check')
-def my_route():
+@app.route('/T2451-loc-check')
+def my_route1():
   upc = request.args.get('upc', default = '*', type = str)
   if upc == '*':
     return 'ERROR. No UPC given'
@@ -19,8 +19,8 @@ def my_route():
   return '<br/><br/>'.join(info)
 
 
-@app.route('/T3277_loc_check')
-def my_route():
+@app.route('/T3277-loc-check')
+def my_route2():
   upc = request.args.get('upc', default = '*', type = str)
   if upc == '*':
     return 'ERROR. No UPC given'
