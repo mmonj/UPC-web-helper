@@ -23,8 +23,8 @@ def _get_item_info(upc):
 
     messages = []
     for store in all_store_items:
-        item = store.get(upc)
-        if item is None:
+        items = all_store_items[store].get(upc)
+        if items is None:
             messages.append('Item not present / Discontinued')
             continue
 
