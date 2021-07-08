@@ -14,9 +14,7 @@ def my_route1():
 
     messages = _get_item_info(upc)
 
-
     return '<br/><br/><br/><br/>'.join(messages)
-
 
 
 def _get_item_info(upc):
@@ -35,4 +33,3 @@ def _get_item_info(upc):
         )
 
     return messages
-    
