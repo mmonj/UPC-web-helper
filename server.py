@@ -3,38 +3,36 @@ from string import Template
 from flask import Flask, request
 
 app = Flask(__name__)
-ITEMS_JSON_TEMPLATE = Template('items_T$store_number.json')
 
+ITEMS_JSON = 'items.json'
 
-@app.route('/T2451-loc-check')
+@app.route('/loc-check')
 def my_route1():
     upc = request.args.get('upc', default=None, type=str)
     if upc is None:
         return 'ERROR. No UPC given'
 
-    info = _get_item_info(upc, '2451')
-    if info is None:
-        return 'Item not present / Discontinued'
-
-    return '<br/><br/>'.join(info.values())
+    messages = _get_item_info(upc)
 
 
-@app.route('/T3277-loc-check')
-def my_route2():
-    upc = request.args.get('upc', default=None, type=str)
-    if upc is None:
-        return 'ERROR. No UPC given'
-
-    info = _get_item_info(upc, '3277')
-    if info is None:
-        return 'Item not present / Discontinued'
-
-    return '<br/><br/>'.join(info.values())
+    return '<br/><br/><br/><br/>'.join(messages)
 
 
-def _get_item_info(upc, store_number):
-    items_json = ITEMS_JSON_TEMPLATE.safe_substitute(store_number=store_number)
-    with open(items_json, 'r', encoding='utf8') as fd:
-        items = json.load(fd)
 
-    return items.get(upc)
+def _get_item_info(upc):
+    with open(ITEMS_JSON, 'r', encoding='utf8') as fd:
+        all_store_items = json.load(fd)
+
+    messages = []
+    for store in all_store_items:
+        item = store.get(upc)
+        if item is None:
+            messages.append('Item not present / Discontinued')
+            continue
+
+        messages.append(
+            '{}  {}'.format(item['name'], item['location'])
+        )
+
+    return messages
+    
