@@ -25,13 +25,12 @@ def _get_item_info(upc):
     for store in all_store_items:
         item = all_store_items[store].get(upc)
         if item is None:
-            messages.append('Item not present / Discontinued')
+            messages.append('{store}: Item not present / Discontinued'.format(store=store))
             continue
 
-        messages.append(
-            '{store}:  {name}  {location}'.format(
+        message = '{store}:  {name}  {location}'.format(
                 store=store, name=item['name'], location=item['location']
-            )
         )
+        messages.append(message)
 
     return messages
