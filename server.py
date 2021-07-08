@@ -29,7 +29,9 @@ def _get_item_info(upc):
             continue
 
         messages.append(
-            '{}  {}'.format(item['name'], item['location'])
+            '{store}:  {name}  {location}'.format(
+                store=store, name=item['name'], location=item['location']
+            )
         )
 
     return messages
