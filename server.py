@@ -13,7 +13,6 @@ def my_route1():
         return 'ERROR. No UPC given'
 
     messages = _get_item_info(upc)
-
     return '<br/><br/><br/><br/>'.join(messages)
 
 
