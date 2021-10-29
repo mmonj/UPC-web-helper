@@ -1,3 +1,4 @@
 __pycache__
-item dump_*
+item dump*
 tests/**
+*.lnk
