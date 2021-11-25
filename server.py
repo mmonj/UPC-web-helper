@@ -29,7 +29,7 @@ def my_route2():
 
     message = _get_item_info(upc, wanted_stores)
     # return '<br><br><br><br>'.join(messages)
-    return render_template('index.html', font_size=20, message=message,)
+    return render_template('index.html', font_size=20, message=message)
 
 
 def _get_item_info(upc: str, wanted_stores: list) -> list:
