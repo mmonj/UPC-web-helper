@@ -28,7 +28,8 @@ def my_route2():
         return 'ERROR. No UPC given'
 
     message = _get_item_info(upc, wanted_stores)
-    return '<br><br><br><br>'.join(messages)
+    # return '<br><br><br><br>'.join(messages)
+    return render_template('index.html', message=message)
 
 
 def _get_item_info(upc: str, wanted_stores: list) -> list:
