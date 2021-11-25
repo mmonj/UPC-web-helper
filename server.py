@@ -12,7 +12,7 @@ def my_route1():
 
     upc = request.args.get('upc', default=None, type=str)
     if upc is None or upc == '':
-        return 'ERROR. No UPC given'
+        return 'Error. No UPC given'
 
     message = _get_item_info(upc, wanted_stores)
     # return '<br><br><br><br>'.join(messages)
@@ -21,11 +21,11 @@ def my_route1():
 
 @app.route('/loc-check')
 def my_route2():
-    wanted_stores = ['T1344']
+    wanted_stores = ['T1344', 'T3230', 'T3280']
 
     upc = request.args.get('upc', default=None, type=str)
     if upc is None or upc == '':
-        return 'ERROR. No UPC given'
+        return 'Error. No UPC given'
 
     message = _get_item_info(upc, wanted_stores)
     # return '<br><br><br><br>'.join(messages)
@@ -43,7 +43,7 @@ def _get_item_info(upc: str, wanted_stores: list) -> list:
 
         item = items.get(upc)
         if item is None:
-            message += f'<b>{store}</b> - <b>{upc}</b> not on plano <br><br>'
+            message += f'<b>{store}</b> - {upc} not on plano <br><br>'
             continue
 
         message += f'<b>{store}</b> - <b>{item["location"]}</b> - {item["name"]} <br><br>'
