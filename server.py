@@ -46,7 +46,7 @@ def _get_item_info(upc: str, wanted_stores: list) -> list:
             message += f'{store}: Item not present / Discontinued\n'
             continue
 
-        message += f'<b>{store}<b>: <b>{item["location"]}<b> - {item["name"]}\n'
+        message += f'<strong>{store}</strong>: <strong>{item["location"]}</strong> - {item["name"]}\n'
 
     if not message:
         message = 'Error with store number.'
