@@ -6,14 +6,24 @@ app = Flask(__name__)
 
 ITEMS_JSON = 'items.json'
 
-@app.route('/loc-check')
+@app.route('/loc')
 def my_route1():
+    upc = request.args.get('upc', default=None, type=str)
+    if upc is None or upc == '':
+        return 'ERROR. No UPC given'
+
+    messages = _get_item_info(upc)
+    return '<br><br><br><br>'.join(messages)
+
+
+@app.route('/loc-check')
+def my_route2():
     upc = request.args.get('upc', default=None, type=str)
     if upc is None:
         return 'ERROR. No UPC given'
 
     messages = _get_item_info(upc)
-    return '<br/><br/><br/><br/>'.join(messages)
+    return '<br><br><br><br>'.join(messages)
 
 
 def _get_item_info(upc):

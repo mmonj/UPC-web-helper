@@ -4,34 +4,65 @@ import json
 import os
 import re
 
-DUMP_FORMAT_RE = r'item dump_(T\d+.*)\.\w+'
+# DUMP_FORMAT_RE = r'item dump_(T\d+.*)\.\w+'
 ITEM_ATTRIBUTES_RE = r'(.+?) (\d{12})(?: \d)? ([a-z]\d+)'
 
 DUMP_FOLDER = 'item dumps'
-OUTPUT_FILE = 'items.json'
+ITEMS_JSON_FILE = 'items.json'
 
 
 def main():
-    dump_files = (os.path.join(DUMP_FOLDER, f) for f in os.listdir(DUMP_FOLDER) if f.startswith('item dump_'))
+    dump_files = (os.path.join(DUMP_FOLDER, f) for f in os.listdir(DUMP_FOLDER))
+
+    with open(ITEMS_JSON_FILE, 'r', encoding='utf8') as fd:
+        old_all_items = json.load(fd)
     
-    all_store_items = {}
+    all_items = {}
     for file in dump_files:
-        store_number = re.search(DUMP_FORMAT_RE, file).group(1)
+        basename = os.path.basename(file)
+        store_number = os.path.splitext(basename)[0]
+        # store_number = re.search(DUMP_FORMAT_RE, file).group(1)
 
         items = _parse_items(file)
-        all_store_items[store_number] = {}
-        all_store_items[store_number].update(items)
+        all_items[store_number] = {}
+        all_items[store_number].update(items)
 
-        print(f'{store_number:<20}:{len(items)} items\n')
+        print(f'{store_number:<20}:{len(items)} items')
+
+    print('')
+    compare_items(old_all_items, all_items)
+
+    with open(ITEMS_JSON_FILE, 'w', encoding='utf8') as fd:
+        json.dump(all_items, fd, indent=4)
 
 
-    with open(OUTPUT_FILE, 'w', encoding='utf8') as fd:
-        json.dump(all_store_items, fd, indent=4)
+def compare_items(old_all_items: dict, all_items: dict):
+    for store in old_all_items:
+        print_differences(store, old_all_items, all_items)
 
 
+def print_differences(store: str, old_all_items: dict, all_items: dict):
+    if all_items.get(store) is None:
+        return
+
+    counter = 0
+
+    for upc, item_info in all_items[store].items():
+        location = item_info['location']
+
+        old_upc = old_all_items[store].get(upc)
+        if old_upc is None:
+            continue
+
+        old_location = old_all_items[store][upc]['location']
+
+        if location != old_location:
+            counter += 1
+
+    print(f'{store:<20}: {counter}/{len(all_items[store])} items have moved locations')
 
 
-def _parse_items(file):
+def _parse_items(file: str) -> dict:
     with open(file, 'r', encoding='utf8') as fd:
         contents = fd.read()
 
