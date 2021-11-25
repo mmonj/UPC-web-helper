@@ -1,6 +1,6 @@
 import json
 from string import Template
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, Markup
 
 app = Flask(__name__)
 
@@ -16,7 +16,7 @@ def my_route1():
 
     message = _get_item_info(upc, wanted_stores)
     # return '<br><br><br><br>'.join(messages)
-    return render_template('index.html', font_size=14, message=message)
+    return render_template('index.html', font_size=14, message=Markup(message))
 
 
 @app.route('/loc-check')
@@ -29,7 +29,7 @@ def my_route2():
 
     message = _get_item_info(upc, wanted_stores)
     # return '<br><br><br><br>'.join(messages)
-    return render_template('index.html', font_size=20, message=message)
+    return render_template('index.html', font_size=20, message=Markup(message))
 
 
 def _get_item_info(upc: str, wanted_stores: list) -> list:
