@@ -43,10 +43,10 @@ def _get_item_info(upc: str, wanted_stores: list) -> list:
 
         item = items.get(upc)
         if item is None:
-            message += f'<b>{store}</b>: <b>{upc}</b> not on plano\n'
+            message += f'<b>{store}</b>: <b>{upc}</b> not on plano <br><br>'
             continue
 
-        message += f'<b>{store}</b>: <b>{item["location"]}</b> - {item["name"]}\n\b'
+        message += f'<b>{store}</b>: <b>{item["location"]}</b> - {item["name"]} <br><br>'
 
     if not message:
         message = 'Error with store number.'
