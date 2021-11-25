@@ -1,6 +1,6 @@
 import json
 from string import Template
-from flask import Flask, request
+from flask import Flask, request, render_template
 
 app = Flask(__name__)
 
@@ -8,38 +8,43 @@ ITEMS_JSON = 'items.json'
 
 @app.route('/loc')
 def my_route1():
+    wanted_stores = ['T2451', 'T3277']
+
     upc = request.args.get('upc', default=None, type=str)
     if upc is None or upc == '':
         return 'ERROR. No UPC given'
 
-    messages = _get_item_info(upc)
-    return '<br><br><br><br>'.join(messages)
+    message = _get_item_info(upc, wanted_stores)
+    # return '<br><br><br><br>'.join(messages)
+    return render_template('index.html', message=message)
 
 
 @app.route('/loc-check')
 def my_route2():
+    wanted_stores = ['T1344']
+
     upc = request.args.get('upc', default=None, type=str)
-    if upc is None:
+    if upc is None or upc == '':
         return 'ERROR. No UPC given'
 
-    messages = _get_item_info(upc)
+    message = _get_item_info(upc, wanted_stores)
     return '<br><br><br><br>'.join(messages)
 
 
-def _get_item_info(upc):
+def _get_item_info(upc: str, wanted_stores: list) -> list:
     with open(ITEMS_JSON, 'r', encoding='utf8') as fd:
         all_store_items = json.load(fd)
 
-    messages = []
-    for store in all_store_items:
-        item = all_store_items[store].get(upc)
-        if item is None:
-            messages.append('{store}: Item not present / Discontinued'.format(store=store))
+    message = ''
+    for store, items in all_store_items.items():
+        if store not in wanted_stores:
             continue
 
-        message = '{store}:  {name}  {location}'.format(
-                store=store, name=item['name'], location=item['location']
-        )
-        messages.append(message)
+        item = items.get(upc)
+        if item is None:
+            message += f'{store}: Item not present / Discontinued\n'
+            continue
 
-    return messages
+        message += f'<b>{store}<b>: <b>{item["location"]}<b> - {item["name"]}\n'
+
+    return message
