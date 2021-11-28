@@ -12,7 +12,7 @@ def my_route1():
 
     upc = request.args.get('upc', default=None, type=str)
     if upc is None or upc == '':
-        return 'Error. No UPC given'
+        return render_template('index.html', font_size=18, message='Error. No UPC scanned.')
 
     message = _get_item_info(upc, wanted_stores)
     # return '<br><br><br><br>'.join(messages)
