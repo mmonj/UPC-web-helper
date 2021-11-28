@@ -9,27 +9,29 @@ ITEMS_JSON = 'items.json'
 @app.route('/loc')
 def my_route1():
     wanted_stores = ['T2451', 'T3277']
+    font_size = 18
 
     upc = request.args.get('upc', default=None, type=str)
     if upc is None or upc == '':
-        return render_template('index.html', font_size=18, message='Error. No UPC scanned.')
+        return render_template('index.html', font_size=font_size, message='Error. No UPC scanned.')
 
     message = _get_item_info(upc, wanted_stores)
     # return '<br><br><br><br>'.join(messages)
-    return render_template('index.html', font_size=18, message=Markup(message))
+    return render_template('index.html', font_size=font_size, message=Markup(message))
 
 
 @app.route('/loc-check')
 def my_route2():
     wanted_stores = ['T1344', 'T3230', 'T3280']
+    font_size = 26
 
     upc = request.args.get('upc', default=None, type=str)
     if upc is None or upc == '':
-        return 'Error. No UPC given'
+        return render_template('index.html', font_size=font_size, message='Error. No UPC scanned.')
 
     message = _get_item_info(upc, wanted_stores)
     # return '<br><br><br><br>'.join(messages)
-    return render_template('index.html', font_size=26, message=Markup(message))
+    return render_template('index.html', font_size=font_size, message=Markup(message))
 
 
 def _get_item_info(upc: str, wanted_stores: list) -> list:
