@@ -49,5 +49,5 @@ def _get_item_info(upc: str, wanted_stores: list) -> list:
         message += f'<b>{store}</b> - <b>{item["location"]}</b> - {item["name"]} <br><br>'
 
     if not message:
-        message = 'Error with store number.'
+        message = 'Stores {} not available'.format(', '.join(wanted_stores))
     return message
