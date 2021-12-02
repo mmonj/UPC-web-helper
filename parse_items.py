@@ -27,7 +27,7 @@ def main():
         all_items[store_number] = {}
         all_items[store_number].update(items)
 
-        print(f'{store_number:<20}:{len(items)} items')
+        print(f'{store_number:<20}: {len(items)} items')
 
     print('')
     compare_items(old_all_items, all_items)
@@ -90,3 +90,4 @@ def _parse_items(file: str) -> dict:
 
 if __name__ == '__main__':
     main()
+    input('\bPress Enter to continue')
