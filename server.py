@@ -8,7 +8,7 @@ ITEMS_JSON = 'items.json'
 
 @app.route('/loc')
 def my_route1():
-    wanted_stores = ['T2451', 'T3277']
+    wanted_stores = ['T2451', 'T3277', 'T1344']
     font_size = 18
 
     upc = request.args.get('upc', default=None, type=str)
@@ -40,7 +40,7 @@ def _get_item_info(upc: str, wanted_stores: list) -> list:
 
     message = ''
     for store, items in all_store_items.items():
-        if store not in wanted_stores:
+        if not store.startswith(tuple(wanted_stores)):
             continue
 
         item = items.get(upc)
