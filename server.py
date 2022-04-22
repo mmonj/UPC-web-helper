@@ -67,7 +67,7 @@ def _get_item_info(upc: str, wanted_stores: list) -> list:
         messages.append(f'<b>{store}</b> - <b>{item["location"]}</b> - {item["name"]}')
 
     messages = _organize_message(messages)
-    message = '<br>'.join(messages)
+    message = '<br><br>'.join(messages)
 
     if not message:
         message = 'Stores {} not available'.format(', '.join(wanted_stores))
