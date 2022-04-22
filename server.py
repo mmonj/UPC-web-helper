@@ -1,9 +1,23 @@
 import json
+import logging
 import re
 from string import Template
 from flask import Flask, request, render_template, Markup
 
 app = Flask(__name__)
+
+#
+LOG_FILE_PATH = os.path.join( os.path.dirname(__file__), 'upc_checker.log' )
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter('\n%(asctime)s - [MODULE] %(module)s - [LINE] %(lineno)d - [MSG] %(message)s')
+file_handler = logging.FileHandler(LOG_FILE_PATH)
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+#
 
 ITEMS_JSON = 'items.json'
 
@@ -61,17 +75,17 @@ def _get_item_info(upc: str, wanted_stores: list) -> list:
 
 def _organize_message(messages: list) -> list:
     store_re = r'<b>\w+<b> -'
-    store_re2 = r'<b>\w+( \w+)*<b> -'
 
     temp = []
     for msg in messages:
+        logger.info(msg)
         if re.match(store_re, msg):
             temp.append(msg)
 
     temp.append('<hr class="dashed"><br><br>')
 
     for msg in messages:
-        if re.match(store_re2, msg):
+        if not re.match(store_re, msg):
             temp.append(msg)
 
     return temp
