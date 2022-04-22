@@ -38,18 +38,35 @@ def _get_item_info(upc: str, wanted_stores: list) -> list:
     with open(ITEMS_JSON, 'r', encoding='utf8') as fd:
         all_store_items = json.load(fd)
 
-    message = ''
+    messages = []
     for store, items in all_store_items.items():
         if not store.startswith(tuple(wanted_stores)):
             continue
 
         item = items.get(upc)
         if item is None:
-            message += f'<b>{store}</b> - {upc} not on plano <br><br>'
+            messages.append(f'<b>{store}</b> - {upc} not on plano <br><br>')
             continue
 
-        message += f'<b>{store}</b> - <b>{item["location"]}</b> - {item["name"]} <br><br>'
+        messages.append(f'<b>{store}</b> - <b>{item["location"]}</b> - {item["name"]}')
+
+    messages = _organize_message(messages)
+    message = '<br><br>'.join(messages)
 
     if not message:
         message = 'Stores {} not available'.format(', '.join(wanted_stores))
     return message
+
+def _organize_message(messages: list) -> list:
+    temp = []
+    for msg in messages:
+        if ' ' not in msg:
+            temp.append(msg)
+
+    temp.append('<hr class="dashed"><br><br>')
+
+    for msg in messages:
+        if ' ' in msg:
+            temp.append(msg)
+
+    return temp
