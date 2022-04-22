@@ -90,4 +90,3 @@ def _parse_items(file: str) -> dict:
 
 if __name__ == '__main__':
     main()
-    input('\bPress Enter to continue')
