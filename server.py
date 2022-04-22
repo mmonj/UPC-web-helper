@@ -60,8 +60,8 @@ def _get_item_info(upc: str, wanted_stores: list) -> list:
 
 
 def _organize_message(messages: list) -> list:
-    store_re = r'\w+ -'
-    store_re2 = r'\w+( \w+)* -'
+    store_re = r'<b>\w+<b> -'
+    store_re2 = r'<b>\w+( \w+)*<b> -'
 
     temp = []
     for msg in messages:
