@@ -83,6 +83,7 @@ def _organize_message(messages: list) -> list:
         if re.match(store_re, msg):
             temp.append(msg)
 
+    logger.info(f'temp is: {temp}')
     temp.append('<hr class="dashed"><br><br>')
 
     for msg in messages:
