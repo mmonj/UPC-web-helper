@@ -61,13 +61,13 @@ def _get_item_info(upc: str, wanted_stores: list) -> list:
 
         item = items.get(upc)
         if item is None:
-            messages.append(f'<b>{store}</b> - {upc} not on plano <br><br>')
+            messages.append(f'<b>{store}</b> - {upc} not on plano')
             continue
 
         messages.append(f'<b>{store}</b> - <b>{item["location"]}</b> - {item["name"]}')
 
     messages = _organize_message(messages)
-    message = '<br><br>'.join(messages)
+    message = '<br>'.join(messages)
 
     if not message:
         message = 'Stores {} not available'.format(', '.join(wanted_stores))
@@ -84,7 +84,7 @@ def _organize_message(messages: list) -> list:
             temp.append(msg)
 
     logger.info(f'temp is: {temp}')
-    temp.append('<hr class="dashed"><br><br>')
+    temp.append('<hr class="dashed"><br>')
 
     for msg in messages:
         if not re.match(store_re, msg):
