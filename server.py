@@ -1,4 +1,5 @@
 import json
+import re
 from string import Template
 from flask import Flask, request, render_template, Markup
 
@@ -57,16 +58,20 @@ def _get_item_info(upc: str, wanted_stores: list) -> list:
         message = 'Stores {} not available'.format(', '.join(wanted_stores))
     return message
 
+
 def _organize_message(messages: list) -> list:
+    store_re = r'\w+ -'
+    store_re2 = r'\w+( \w+)* -'
+
     temp = []
     for msg in messages:
-        if ' ' not in msg:
+        if re.match(store_re, msg):
             temp.append(msg)
 
     temp.append('<hr class="dashed"><br><br>')
 
     for msg in messages:
-        if ' ' in msg:
+        if re.match(store_re2, msg):
             temp.append(msg)
 
     return temp
