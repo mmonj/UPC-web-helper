@@ -5,7 +5,7 @@ import os
 import re
 
 # DUMP_FORMAT_RE = r'item dump_(T\d+.*)\.\w+'
-ITEM_ATTRIBUTES_RE = r'(.+?) (\d{12})(?: \d)? ([a-z]\d+)'
+ITEM_ATTRIBUTES_RE = r'(.+?)[ \t]+(\d{12})(?:[ \t]+\d)?[ \t]+([a-z]\d+)'
 
 DUMP_FOLDER = 'item dumps'
 ITEMS_JSON_FILE = 'items.json'
@@ -20,14 +20,14 @@ def main():
     all_items = {}
     for file in dump_files:
         basename = os.path.basename(file)
-        store_number = os.path.splitext(basename)[0]
+        store_name = os.path.splitext(basename)[0]
         # store_number = re.search(DUMP_FORMAT_RE, file).group(1)
 
         items = _parse_items(file)
-        all_items[store_number] = {}
-        all_items[store_number].update(items)
+        all_items[store_name] = {}
+        all_items[store_name].update(items)
 
-        print(f'{store_number:<20}: {len(items)} items')
+        print(f'{store_name:<20}: {len(items)} items')
 
     print('')
     compare_items(old_all_items, all_items)
