@@ -84,7 +84,7 @@ def _organize_message(messages: list) -> list:
             temp.append(msg)
 
     logger.info(f'temp is: {temp}')
-    temp.append('<hr class="dashed"><br>')
+    temp.append('<hr class="dashed">')
 
     for msg in messages:
         if not re.match(store_re, msg):
