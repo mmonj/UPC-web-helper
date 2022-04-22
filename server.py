@@ -24,7 +24,7 @@ ITEMS_JSON = 'items.json'
 
 @app.route('/loc')
 def my_route1():
-    wanted_stores = ['T2451', 'T3277', 'T1344']
+    wanted_stores = ['T2451', 'T3277']
     font_size = 18
 
     upc = request.args.get('upc', default=None, type=str)
