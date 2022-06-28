@@ -5,6 +5,8 @@ import re
 from string import Template
 from flask import Flask, request, render_template, Markup
 
+import upc_logger
+
 app = Flask(__name__)
 
 #
