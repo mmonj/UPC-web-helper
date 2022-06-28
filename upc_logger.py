@@ -1,4 +1,3 @@
-from checkdigit import gs1
 import json
 import os
 from flask import Blueprint, render_template, session, abort
