@@ -1,7 +1,6 @@
 <html>
   <head>
     <link href="https://fonts.googleapis.com/css?family=Nunito+Sans:400,400i,700,900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles/upc_log.css') }}">
   </head>
     <style>
       body {
@@ -43,8 +42,7 @@
         <i class="checkmark">✓</i>
       </div>
         <h1>Success</h1> 
-        <p>UPC barcode scanned as {{upc}} has been saved<br><br><br><br><br>
-        <a href="javascript:void(0);" onclick="window.history.back();">Continue Scanning</a>
+        <p>UPC barcode scanned as {{upc}} has been saved<br>
         </p>
       </div>
     </body>
