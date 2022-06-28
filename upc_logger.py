@@ -1,6 +1,6 @@
 import json
 import os
-from flask import Blueprint, render_template, session, abort
+from flask import Blueprint, render_template, session, abort, request, Markup
 
 STORE_INFO_FILE = 'store_info.json'
 
