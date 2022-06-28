@@ -27,4 +27,4 @@ def my_route1():
     with open(STORE_INFO_FILE, 'w', encoding='utf8') as fd:
         json.dump(stores, fd, indent=4)
 
-    return render_template('index.html', font_size=font_size, message=Markup('Success'))
+    return render_template('upc_log_success.html', upc=upc)
