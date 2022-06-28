@@ -22,7 +22,7 @@ def my_route1():
         return render_template('index.html', font_size=font_size, message='Error. No UPC scanned.')
 
     now = datetime.datetime.now().strftime('%Y-%m-%d at %H:%M:%S')
-    stores['all'].append( {upc: now} )
+    stores['all'][upc] = now
 
     with open(STORE_INFO_FILE, 'w', encoding='utf8') as fd:
         json.dump(stores, fd, indent=4)

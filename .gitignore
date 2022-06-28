@@ -2,3 +2,4 @@ __pycache__
 item dump*
 tests/**
 *.lnk
+store_info.json
