@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import time
 from flask import Blueprint, render_template, session, abort, request, Markup
 
 STORE_INFO_FILE = 'store_info.json'
@@ -21,7 +22,9 @@ def my_route1():
     if upc is None or upc == '':
         return render_template('index.html', font_size=font_size, message='Error. No UPC scanned.')
 
-    now = datetime.datetime.now().strftime('%Y-%m-%d at %H:%M:%S')
+    time = time.time() - (5 * 3600)
+    now = datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d at %I:%M:%S')
+    # now = datetime.datetime.now().strftime('%Y-%m-%d at %H:%M:%S')
     stores['all'][upc] = now
 
     with open(STORE_INFO_FILE, 'w', encoding='utf8') as fd:
