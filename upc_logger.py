@@ -22,7 +22,7 @@ def my_route1():
     if upc is None or upc == '':
         return render_template('index.html', font_size=font_size, message='Error. No UPC scanned.')
 
-    ts = time.time() - (5 * 3600)
+    ts = time.time() - (4 * 3600)
     now = datetime.datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d at %I:%M:%S')
     # now = datetime.datetime.now().strftime('%Y-%m-%d at %H:%M:%S')
     stores['all'][upc] = now
