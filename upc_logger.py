@@ -1,11 +1,13 @@
-from __main__ import app
 from checkdigit import gs1
 import json
 import os
+from flask import Blueprint, render_template, session, abort
 
 STORE_INFO_FILE = 'store_info.json'
 
-@app.route('/upc-log')
+app_upc_logger = Blueprint('app_upc_logger',__name__)
+
+@app_upc_logger.route("/upc-log")
 def my_route1():
     font_size = 18
 

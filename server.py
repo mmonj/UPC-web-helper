@@ -5,9 +5,10 @@ import re
 from string import Template
 from flask import Flask, request, render_template, Markup
 
-import upc_logger
+from upc_logger import app_upc_logger
 
 app = Flask(__name__)
+app.register_blueprint(app_upc_logger)
 
 #
 LOG_FILE_PATH = os.path.join( os.path.dirname(__file__), 'upc_checker.log' )
