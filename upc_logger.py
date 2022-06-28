@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 from flask import Blueprint, render_template, session, abort, request, Markup
@@ -20,6 +21,8 @@ def my_route1():
     if upc is None or upc == '':
         return render_template('index.html', font_size=font_size, message='Error. No UPC scanned.')
 
-    message = 'Success'
+    now = datetime.datetime.now().strftime('%Y-%m-%d at %H:%M:%S')
+    stores['all'].append( {upc: now} )
 
-    return render_template('index.html', font_size=font_size, message=Markup(message))
+
+    return render_template('index.html', font_size=font_size, message=Markup('Success'))
