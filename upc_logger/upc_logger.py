@@ -39,9 +39,9 @@ def route_log():
 
 @app_upc_logger.route( "/upc_log_final", methods=['GET', 'POST'] )
 def route_log_final():
-    return render_template(UPC_LOG_FINAL_HTML_TEMPLATE)
-    select = request.form.get('comp_select')
-    return(str(select)) # just to see what select is
+    upc = request.form.get('upc_value')
+    store = request.form.get('store_value')
+    return(f'"{upc}"<br><br>"{store}"') # just to see what select is
 
 
 def get_stores() -> dict:

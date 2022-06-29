@@ -19,7 +19,7 @@
 
         <label for="content">Stores list</label>
         <br>
-        <select name="store_select" method="GET" action="/">
+        <select name="store_value" method="GET" action="/">
           <option value="{{stores[0]}}" selected>{{stores[0]}}</option>
           {% for store in stores[1:] %}
             <option value="{{store}}">{{store}}</option>
