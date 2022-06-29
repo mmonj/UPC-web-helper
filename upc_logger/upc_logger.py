@@ -26,28 +26,48 @@ STORE_INFO_FILE = './static/store_info.json'
 STORE_INFO_JS_FILE = './static/store_info.js'
 app_upc_logger = Blueprint('app_upc_logger', __name__)
 
-LAST_REQUEST_INFO = {
-    'store': None
-}
+class LastRequest:
+    time_secs_before_asking_again = 15
+    time_last_processed = 0
+    previous_store = None
+
+    @classmethod
+    def update_store(store: str):
+        cls.previous_store = store
+        cls.time_last_processed = time.time()
+
+    @classmethod
+    def get_previous_store(cls) -> str:
+        if abs(time.time() - cls.time_last_processed) < time_secs_before_asking_again:
+            return cls.previous_store
+        return None
+
 
 @app_upc_logger.route("/upc_log_form")
 def route_log():
     _assert_settings(request)
+    upc = request.args.get('upc')
+
+    if LastRequest.get_previous_store() is not None:
+        return(f'{upc}<br><br>{LastRequest.get_previous_store()}')
+    else:
+        return 'Previous store returned None, choose from the dropdown again'
 
     stores = get_stores()
     # stores = dump_data(stores)
 
     stores_list = [f for f in stores.keys() if f != 'all']
-    return render_template(UPC_LOG_FORM_HTML_TEMPLATE, upc_scanned=request.args.get('upc'), stores=stores_list)
+    return render_template(UPC_LOG_FORM_HTML_TEMPLATE, upc_scanned=upc, stores=stores_list)
 
 
 @app_upc_logger.route( "/upc_log_final", methods=['GET', 'POST'] )
 def route_log_final():
-    upc = request.form.get('upc_value')
-    store = request.form.get('store_value')
-    if store is not None:
-        LAST_REQUEST_INFO['store'] = store
-    return(f'"{upc}"<br><br>"{store}"<br><br>{LAST_REQUEST_INFO}') # just to see what select is
+    if request.method == 'POST':
+        upc = request.form.get('upc_value')
+        store = request.form.get('store_value')
+        LastRequest.update_store(store)
+
+        return(f'"{upc}"<br><br>"{store}"<br><br>') # just to see what select is
 
 
 def get_stores() -> dict:
