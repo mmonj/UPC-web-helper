@@ -38,7 +38,7 @@ class LastRequest:
 
     @classmethod
     def get_previous_store(cls) -> str:
-        if abs(time.time() - cls.time_last_processed) < time_secs_before_asking_again:
+        if abs(time.time() - cls.time_last_processed) < cls.time_secs_before_asking_again:
             return cls.previous_store
         return None
 
