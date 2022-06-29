@@ -26,9 +26,6 @@ app_upc_logger = Blueprint('app_upc_logger', __name__)
 def my_route1():
     font_size = 18
 
-    logger.info(f'{os.path.isdir("static")}')
-    logger.info(f'{os.listdir("static")}')
-
     if not os.path.isfile(STORE_INFO_FILE):
         return render_template('index.html', font_size=font_size, message=f'Error. No JSON file found.')
 
