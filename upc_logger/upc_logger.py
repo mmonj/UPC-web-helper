@@ -3,7 +3,7 @@ import json
 import logging
 import os
 import time
-from flask import Blueprint, render_template, session, abort, request, Markup
+from flask import Blueprint, render_template, session, abort, request, Markup, redirect
 
 ##
 LOG_FILE_PATH = os.path.join( os.path.dirname(__file__), 'upc_logger.log' )
