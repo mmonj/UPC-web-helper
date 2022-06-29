@@ -4,6 +4,20 @@ import os
 import time
 from flask import Blueprint, render_template, session, abort, request, Markup
 
+##
+LOG_FILE_PATH = os.path.join( os.path.dirname(__file__), 'upc_logger.log' )
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter('\n%(asctime)s - [MODULE] %(module)s - [LINE] %(lineno)d - [MSG] %(message)s')
+file_handler = logging.FileHandler(LOG_FILE_PATH)
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+##
+
+
 STORE_INFO_FILE = './static/store_info.json'
 app_upc_logger = Blueprint('app_upc_logger', __name__)
 
@@ -11,8 +25,11 @@ app_upc_logger = Blueprint('app_upc_logger', __name__)
 def my_route1():
     font_size = 18
 
+    logger.info(f'{os.path.isdir('static')}')
+    logger.info(f'{os.listdir('static')}')
+
     if not os.path.isfile(STORE_INFO_FILE):
-        return render_template('index.html', font_size=font_size, message=f'Error. No JSON file found. {os.listdir()}')
+        return render_template('index.html', font_size=font_size, message=f'Error. No JSON file found.')
 
     with open(STORE_INFO_FILE, 'r', encoding='utf8') as fd:
         stores = json.load(fd)
