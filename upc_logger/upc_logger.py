@@ -37,7 +37,10 @@ class LastRequest:
         cls.time_last_processed = time.time()
 
     @classmethod
-    def get_previous_store(cls) -> str:
+    def get_previous_store(cls, check_time=True) -> str:
+        if not check_time:
+            return cls.previous_store
+
         if abs(time.time() - cls.time_last_processed) < cls.time_secs_before_asking_again:
             return cls.previous_store
         return None
@@ -51,6 +54,7 @@ def route_log():
     
     if previous_store is not None:
         LastRequest.update_store(previous_store)
+        redirect(f'/upc_log_final?upc={upc}')
         return(f'{upc}<br><br>{previous_store}')
 
     stores = get_stores()
@@ -67,7 +71,11 @@ def route_log_final():
         store = request.form.get('store_value')
         LastRequest.update_store(store)
 
-        return(f'"{upc}"<br><br>"{store}"<br><br>') # just to see what select is
+        return(f'from post request:<br><br>"{upc}"<br><br>"{store}"<br><br>')
+    
+    upc = request.args.get('upc')
+    store = LastRequest.get_previous_store(check_time=False)
+    return f'From redirect:<br><br>{upc}<br><br>{store}'
 
 
 def get_stores() -> dict:
