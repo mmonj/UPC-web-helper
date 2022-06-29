@@ -54,6 +54,7 @@ def route_log():
     
     if previous_store is not None:
         LastRequest.update_store(previous_store)
+        logger.info(f'{redirect(f'/upc_log_final?upc={upc}')}')
         return redirect(f'/upc_log_final?upc={upc}')
         # return(f'{upc}<br><br>{previous_store}')
 
