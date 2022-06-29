@@ -45,7 +45,8 @@ def route_log():
 def route_log_final():
     upc = request.form.get('upc_value')
     store = request.form.get('store_value')
-    LAST_REQUEST_INFO['store'] = store
+    if store is not None:
+        LAST_REQUEST_INFO['store'] = store
     return(f'"{upc}"<br><br>"{store}"<br><br>{LAST_REQUEST_INFO}') # just to see what select is
 
 
