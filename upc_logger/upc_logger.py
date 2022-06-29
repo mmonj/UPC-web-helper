@@ -34,9 +34,9 @@ def my_route1():
     return render_template('upc_log.html', upc_scanned=request.args.get('upc'), stores=stores_list)
 
 
-@app_upc_logger.route("/upc_log_final" , methods=('GET', 'POST'))
-def upc_logger_final():
-    return render_template('upc_log_final.html')
+# @app_upc_logger.route("/upc_log_final", methods=['GET', 'POST'])
+# def upc_logger_final():
+#     return render_template('upc_log_final.html')
     # select = request.form.get('comp_select')
     # return(str(select)) # just to see what select is
 
