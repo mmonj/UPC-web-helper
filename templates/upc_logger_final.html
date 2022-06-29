@@ -45,28 +45,5 @@
         <p>UPC barcode scanned as {{upc}} has been saved<br>
         </p>
       </div>
-
-      <form method="post" action="{{ url_for('test') }}">
-        <label for="title">Title</label>
-        <br>
-        <input type="text" name="upc_value" readonly
-               value="{{upc_scanned}}"></input>
-        <br>
-
-        <label for="content">Message Content</label>
-        <br>
-        <select name="store_select" method="GET" action="/">
-          <option value="{{stores[0]}}" selected>{{stores[0]}}</option>
-          {% for store in stores[1:] %}
-            <option value="{{store}}">{{store}}</option>
-          {% endfor %}
-        </select>
-        <br>
-        <button type="submit">Submit</button>
-      </form>
-
-
-
-
     </body>
 </html>
