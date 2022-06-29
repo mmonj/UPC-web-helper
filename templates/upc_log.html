@@ -45,11 +45,24 @@
         <p>UPC barcode scanned as {{upc}} has been saved<br>
         </p>
       </div>
-      <select name="colour" method="GET" action="/">
-        <option value="{{stores[0]}}" selected>{{stores[0]}}</option>
-        {% for colour in stores[1:] %}
-          <option value="{{colour}}">{{colour}}</option>
-        {% endfor %}
-      </select>
+
+      <form method="post">
+        <label for="title">Title</label>
+        <br>
+        <input type="text" name="upc_value"
+               placeholder="UPC value">{{upc_scanned}}</input>
+        <br>
+
+        <label for="content">Message Content</label>
+        <br>
+        <select name="store_select" method="GET" action="/">
+          <option value="{{stores[0]}}" selected>{{stores[0]}}</option>
+          {% for store in stores[1:] %}
+            <option value="{{store}}">{{store}}</option>
+          {% endfor %}
+        </select>
+        <br>
+        <button type="submit">Submit</button>
+      </form>
     </body>
 </html>

@@ -19,28 +19,30 @@ logger.addHandler(file_handler)
 ##
 
 
-TEMPLATE_FILE = 'upc_log_success.html'
+TEMPLATE_FILE = 'upc_log.html'
 STORE_INFO_FILE = './static/store_info.json'
 STORE_INFO_JS_FILE = './static/store_info.js'
 app_upc_logger = Blueprint('app_upc_logger', __name__)
 
-@app_upc_logger.route("/upc-log")
+@app_upc_logger.route("/upc-log", methods=('GET', 'POST'))
 def my_route1():
-    font_size = 18
+    _assert_settings(requests)
 
-    if not os.path.isfile(STORE_INFO_FILE):
-        return render_template('index.html', font_size=font_size, message=f'Error. No JSON file found.')
+    stores = get_stores()
+    # stores = dump_data(stores)
 
+    stores_list = [f for f in stores.keys() if f != 'all']
+    return render_template(TEMPLATE_FILE, upc_scanned=upc=request.args.get('upc'), stores=stores_list)
+
+
+def get_stores() -> dict:
     with open(STORE_INFO_FILE, 'r', encoding='utf8') as fd:
-        stores = json.load(fd)
+        return json.load(fd)
 
-    upc = request.args.get('upc', default=None, type=str)
-    if upc is None or upc == '':
-        return render_template('index.html', font_size=font_size, message='Error. No UPC scanned.')
 
+def dump_data() -> dict:
     ts = time.time() - (4 * 3600)
     now = datetime.datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d at %I:%M:%S %p')
-    # now = datetime.datetime.now().strftime('%Y-%m-%d at %H:%M:%S')
     stores['all'][upc] = now
 
     with open(STORE_INFO_FILE, 'w', encoding='utf8') as fd:
@@ -51,7 +53,15 @@ def my_route1():
     with open(STORE_INFO_JS_FILE, 'w', encoding='utf8') as fd:
         fd.write(data_str)
 
+    return stores
 
-    stores = [f for f in stores.keys() if f != 'all']
 
-    return render_template(TEMPLATE_FILE, stores=stores)
+def _assert_settings(requests: object) -> object:
+    font_size = 18
+
+    if not os.path.isfile(STORE_INFO_FILE):
+        return render_template('index.html', font_size=font_size, message=f'Error. No JSON file found.')
+
+    upc = request.args.get('upc', default=None, type=str)
+    if upc is None or upc == '':
+        return render_template('index.html', font_size=font_size, message='Error. No UPC scanned.')
