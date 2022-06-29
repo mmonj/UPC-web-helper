@@ -4,7 +4,7 @@ import os
 import time
 from flask import Blueprint, render_template, session, abort, request, Markup
 
-STORE_INFO_FILE = 'store_info.json'
+STORE_INFO_FILE = 'static/store_info.json'
 
 app_upc_logger = Blueprint('app_upc_logger',__name__)
 
