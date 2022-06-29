@@ -24,7 +24,7 @@ STORE_INFO_JS_FILE = './static/store_info.js'
 app_upc_logger = Blueprint('app_upc_logger', __name__)
 
 @app_upc_logger.route("/upc_log_form", methods=('GET'))
-def my_route1():
+def route_log():
     _assert_settings(request)
 
     stores = get_stores()
@@ -34,11 +34,11 @@ def my_route1():
     return render_template('upc_log.html', upc_scanned=request.args.get('upc'), stores=stores_list)
 
 
-# @app_upc_logger.route("/upc_log_final", methods=['GET', 'POST'])
-# def upc_logger_final():
-#     return render_template('upc_log_final.html')
-    # select = request.form.get('comp_select')
-    # return(str(select)) # just to see what select is
+@app_upc_logger.route("/upc_log_final", methods=['GET', 'POST'])
+def route_log_final():
+    return render_template('upc_log_final.html')
+    select = request.form.get('comp_select')
+    return(str(select)) # just to see what select is
 
 
 def get_stores() -> dict:
