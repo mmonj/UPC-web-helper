@@ -50,8 +50,6 @@ def route_log():
 
     if LastRequest.get_previous_store() is not None:
         return(f'{upc}<br><br>{LastRequest.get_previous_store()}')
-    else:
-        return 'Previous store returned None, choose from the dropdown again'
 
     stores = get_stores()
     # stores = dump_data(stores)
