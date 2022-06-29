@@ -47,9 +47,11 @@ class LastRequest:
 def route_log():
     _assert_settings(request)
     upc = request.args.get('upc')
-
-    if LastRequest.get_previous_store() is not None:
-        return(f'{upc}<br><br>{LastRequest.get_previous_store()}')
+    previous_store = LastRequest.get_previous_store()
+    
+    if previous_store is not None:
+        LastRequest.update_store(previous_store)
+        return(f'{upc}<br><br>{previous_store}')
 
     stores = get_stores()
     # stores = dump_data(stores)
