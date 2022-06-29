@@ -3,3 +3,5 @@ item dump*
 tests/**
 *.lnk
 store_info.json
+static/*
+*.log
