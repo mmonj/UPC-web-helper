@@ -32,7 +32,7 @@ class LastRequest:
     previous_store = None
 
     @classmethod
-    def update_store(store: str):
+    def update_store(cls, store: str):
         cls.previous_store = store
         cls.time_last_processed = time.time()
 
