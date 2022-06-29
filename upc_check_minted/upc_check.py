@@ -15,6 +15,8 @@ logger.addHandler(file_handler)
 
 ITEMS_JSON = 'items.json'
 
+app_upc_check = Blueprint('app_upc_check', __name__)
+
 @app.route('/loc')
 def my_route1():
     wanted_stores = ['T2451', 'T3277']

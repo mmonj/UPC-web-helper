@@ -6,7 +6,7 @@ from flask import Blueprint, render_template, session, abort, request, Markup
 
 STORE_INFO_FILE = 'static/store_info.json'
 
-app_upc_logger = Blueprint('app_upc_logger',__name__)
+app_upc_logger = Blueprint('app_upc_logger', __name__)
 
 @app_upc_logger.route("/upc-log")
 def my_route1():
