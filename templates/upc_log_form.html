@@ -1,7 +1,14 @@
 <html>
   <head>
-
+    <link href="https://fonts.googleapis.com/css?family=Nunito+Sans:400,400i,700,900&display=swap" rel="stylesheet">
   </head>
+    <style>
+      body {
+        text-align: center;
+        padding: 40px 0;
+        background: #EBF0F5;
+      }
+    </style>
     <body>
       <form method="post" action="{{ url_for('app_upc_logger.route_log_final') }}">
         <label for="UPC">Title</label>
@@ -18,7 +25,7 @@
             <option value="{{store}}">{{store}}</option>
           {% endfor %}
         </select>
-        <br><br>
+        <br>
         <button type="submit">Submit</button>
       </form>
 
