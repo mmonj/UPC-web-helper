@@ -1,4 +1,9 @@
-from flask import Blueprint, render_template, session, abort, request, Markup
+import json
+import logging
+import os
+import re
+from string import Template
+from flask import Flask, request, render_template, Markup, Blueprint
 
 #
 LOG_FILE_PATH = os.path.join( os.path.dirname(__file__), 'upc_checker.log' )

@@ -1,9 +1,4 @@
-import json
-import logging
-import os
-import re
-from string import Template
-from flask import Flask, request, render_template, Markup
+from flask import Flask
 
 from upc_check_minted import upc_check
 from upc_logger import upc_logger
