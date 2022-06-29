@@ -19,6 +19,7 @@ logger.addHandler(file_handler)
 ##
 
 
+TEMPLATE_FILE = 'upc_log_success.html'
 STORE_INFO_FILE = './static/store_info.json'
 STORE_INFO_JS_FILE = './static/store_info.js'
 app_upc_logger = Blueprint('app_upc_logger', __name__)
@@ -50,4 +51,7 @@ def my_route1():
     with open(STORE_INFO_JS_FILE, 'w', encoding='utf8') as fd:
         fd.write(data_str)
 
-    return render_template('upc_log_success.html', upc=upc)
+
+    stores = [f for f in stores.keys() if f != 'all']
+
+    return render_template(TEMPLATE_FILE, stores=stores)
