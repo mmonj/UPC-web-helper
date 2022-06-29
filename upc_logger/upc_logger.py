@@ -26,6 +26,10 @@ STORE_INFO_FILE = './static/store_info.json'
 STORE_INFO_JS_FILE = './static/store_info.js'
 app_upc_logger = Blueprint('app_upc_logger', __name__)
 
+LAST_REQUEST_INFO = {
+    'store': None
+}
+
 @app_upc_logger.route("/upc_log_form")
 def route_log():
     _assert_settings(request)
@@ -39,6 +43,9 @@ def route_log():
 
 @app_upc_logger.route( "/upc_log_final", methods=['GET', 'POST'] )
 def route_log_final():
+    if LAST_REQUEST_INFO['store'] is not None:
+        return LAST_REQUEST_INFO['store']
+
     upc = request.form.get('upc_value')
     store = request.form.get('store_value')
     return(f'"{upc}"<br><br>"{store}"') # just to see what select is
