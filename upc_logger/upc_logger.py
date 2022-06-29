@@ -46,7 +46,7 @@ def my_route1():
         json.dump(stores, fd, indent=4)
 
     data_str = json.dumps(stores, indent=4)
-    data_str = 'var STORES = ' + data_str
+    data_str = 'var STORES = ' + data_str + ';'
     with open(STORE_INFO_JS_FILE, 'w', encoding='utf8') as fd:
         fd.write(data_str)
 
