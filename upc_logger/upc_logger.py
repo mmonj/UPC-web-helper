@@ -12,7 +12,7 @@ def my_route1():
     font_size = 18
 
     if not os.path.isfile(STORE_INFO_FILE):
-        return render_template('index.html', font_size=font_size, message=f'Error. No JSON file found. "{os.getcwd()}"')
+        return render_template('index.html', font_size=font_size, message='Error. No JSON file found.{}'.format(f'\n{os.getcwd()}\n{os.listdir()}\n{os.path.isdir('static')}') )
 
     with open(STORE_INFO_FILE, 'r', encoding='utf8') as fd:
         stores = json.load(fd)
