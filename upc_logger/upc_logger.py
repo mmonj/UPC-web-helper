@@ -43,12 +43,9 @@ def route_log():
 
 @app_upc_logger.route( "/upc_log_final", methods=['GET', 'POST'] )
 def route_log_final():
-    if LAST_REQUEST_INFO['store'] is not None:
-        return LAST_REQUEST_INFO['store']
-
     upc = request.form.get('upc_value')
     store = request.form.get('store_value')
-    return(f'"{upc}"<br><br>"{store}"') # just to see what select is
+    return(f'"{upc}"<br><br>"{store}"<br><br>{LAST_REQUEST_INFO}') # just to see what select is
 
 
 def get_stores() -> dict:
