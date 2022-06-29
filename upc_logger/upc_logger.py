@@ -32,7 +32,7 @@ def my_route1():
     # stores = dump_data(stores)
 
     stores_list = [f for f in stores.keys() if f != 'all']
-    return render_template(TEMPLATE_FILE, upc_scanned=upc=request.args.get('upc'), stores=stores_list)
+    return render_template(TEMPLATE_FILE, upc_scanned=request.args.get('upc'), stores=stores_list)
 
 
 def get_stores() -> dict:
