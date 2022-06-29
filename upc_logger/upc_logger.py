@@ -18,6 +18,9 @@ file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 ##
 
+INDEX_HTML_TEMPLATE = 'index.html'
+UPC_LOG_FORM_HTML_TEMPLATE = 'upc_log_form.html'
+UPC_LOG_FINAL_HTML_TEMPLATE = 'upc_log_final.html'
 
 STORE_INFO_FILE = './static/store_info.json'
 STORE_INFO_JS_FILE = './static/store_info.js'
@@ -31,12 +34,12 @@ def route_log():
     # stores = dump_data(stores)
 
     stores_list = [f for f in stores.keys() if f != 'all']
-    return render_template('upc_log.html', upc_scanned=request.args.get('upc'), stores=stores_list)
+    return render_template(UPC_LOG_FORM_HTML_TEMPLATE, upc_scanned=request.args.get('upc'), stores=stores_list)
 
 
 @app_upc_logger.route( "/upc_log_final", methods=['GET', 'POST'] )
 def route_log_final():
-    return render_template('upc_log_final.html')
+    return render_template(UPC_LOG_FINAL_HTML_TEMPLATE)
     select = request.form.get('comp_select')
     return(str(select)) # just to see what select is
 
@@ -66,8 +69,8 @@ def _assert_settings(request: object) -> object:
     font_size = 18
 
     if not os.path.isfile(STORE_INFO_FILE):
-        return render_template('index.html', font_size=font_size, message=f'Error. No JSON file found.')
+        return render_template(INDEX_HTML_TEMPLATE, font_size=font_size, message=f'Error. No JSON file found.')
 
     upc = request.args.get('upc', default=None, type=str)
     if upc is None or upc == '':
-        return render_template('index.html', font_size=font_size, message='Error. No UPC scanned.')
+        return render_template(INDEX_HTML_TEMPLATE, font_size=font_size, message='Error. No UPC scanned.')
