@@ -26,7 +26,7 @@ app_upc_logger = Blueprint('app_upc_logger', __name__)
 
 @app_upc_logger.route("/upc-log", methods=('GET', 'POST'))
 def my_route1():
-    _assert_settings(requests)
+    _assert_settings(request)
 
     stores = get_stores()
     # stores = dump_data(stores)
@@ -56,7 +56,7 @@ def dump_data() -> dict:
     return stores
 
 
-def _assert_settings(requests: object) -> object:
+def _assert_settings(request: object) -> object:
     font_size = 18
 
     if not os.path.isfile(STORE_INFO_FILE):
