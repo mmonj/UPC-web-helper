@@ -22,7 +22,7 @@ ITEMS_JSON = 'items.json'
 
 app_upc_check = Blueprint('app_upc_check', __name__)
 
-@app.route('/loc')
+@app_upc_check.route('/loc')
 def my_route1():
     wanted_stores = ['T2451', 'T3277']
     font_size = 18
@@ -36,7 +36,7 @@ def my_route1():
     return render_template('index.html', font_size=font_size, message=Markup(message))
 
 
-@app.route('/loc-check')
+@app_upc_check.route('/loc-check')
 def my_route2():
     wanted_stores = ['T1344', 'T3230', 'T3280']
     font_size = 26
