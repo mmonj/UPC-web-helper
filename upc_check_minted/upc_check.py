@@ -5,7 +5,7 @@ import re
 from string import Template
 from flask import Flask, request, render_template, Markup, Blueprint
 
-#
+##
 LOG_FILE_PATH = os.path.join( os.path.dirname(__file__), 'upc_checker.log' )
 
 logger = logging.getLogger(__name__)
@@ -16,10 +16,9 @@ file_handler = logging.FileHandler(LOG_FILE_PATH)
 file_handler.setFormatter(formatter)
 
 logger.addHandler(file_handler)
-#
+##
 
 ITEMS_JSON = 'items.json'
-
 app_upc_check = Blueprint('app_upc_check', __name__)
 
 @app_upc_check.route('/loc')
