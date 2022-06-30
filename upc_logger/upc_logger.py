@@ -26,57 +26,53 @@ STORE_INFO_FILE = './static/store_info.json'
 STORE_INFO_JS_FILE = './static/store_info.js'
 app_upc_logger = Blueprint('app_upc_logger', __name__)
 
-class LastRequest:
-    time_secs_before_asking_again = 15
-    time_last_processed = 0
+class SessionTracker:
+    grace_period_secs = 15
+    last_processed_secs = 0
     previous_store = None
 
     @classmethod
     def update_store(cls, store: str):
         cls.previous_store = store
-        cls.time_last_processed = time.time()
+        cls.last_processed_secs = time.time()
 
     @classmethod
-    def get_previous_store(cls, check_time=True) -> str:
-        if not check_time:
-            return cls.previous_store
+    def get_previous_store(cls) -> str:
+        return cls.previous_store
 
-        if abs(time.time() - cls.time_last_processed) < cls.time_secs_before_asking_again:
-            return cls.previous_store
-        return None
+    @classmethod
+    def is_continue_previous_store(cls) -> bool:
+        return abs(time.time() - cls.last_processed_secs) < cls.grace_period_secs
 
 
 @app_upc_logger.route("/upc_log_form")
 def route_log():
     _assert_settings(request)
     upc = request.args.get('upc')
-    previous_store = LastRequest.get_previous_store()
-    
-    if previous_store is not None:
-        LastRequest.update_store(previous_store)
-        logger.info('{}'.format(redirect(f'/upc_log_final?upc={upc}')))
-        return redirect(f'/upc_log_final?upc={upc}')
+
+    # if SessionTracker.is_continue_previous_store():
+    #     logger.info('{}'.format(redirect(f'/upc_log_final?upc={upc}')))
+    #     return redirect(f'/upc_log_final?upc={upc}')
         # return(f'{upc}<br><br>{previous_store}')
 
     stores = get_stores()
     # stores = dump_data(stores)
-
     stores_list = [f for f in stores.keys() if f != 'all']
-    return render_template(UPC_LOG_FORM_HTML_TEMPLATE, upc_scanned=upc, stores=stores_list)
+    return render_template(
+        UPC_LOG_FORM_HTML_TEMPLATE,
+        upc=upc,
+        stores=stores_list,
+        is_continue_previous_store=SessionTracker.is_continue_previous_store(),
+        previous_store=SessionTracker.get_previous_store()
+    )
 
 
-@app_upc_logger.route( "/upc_log_final", methods=['GET', 'POST'] )
+@app_upc_logger.route( "/upc_log_final")
 def route_log_final():
-    if request.method == 'POST':
-        upc = request.form.get('upc_value')
-        store = request.form.get('store_value')
-        LastRequest.update_store(store)
-
-        return(f'from post request:<br><br>"{upc}"<br><br>"{store}"<br><br>')
-    
     upc = request.args.get('upc')
-    store = LastRequest.get_previous_store(check_time=False)
-    return f'From redirect:<br><br>{upc}<br><br>{store}'
+    store = request.args.get('store')
+    SessionTracker.update_store(store)
+    return render_template(UPC_LOG_FINAL_HTML_TEMPLATE, upc=upc, store=store)
 
 
 def get_stores() -> dict:

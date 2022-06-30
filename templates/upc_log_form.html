@@ -10,11 +10,17 @@
       }
     </style>
     <body>
-      <form method="post" action="{{ url_for('app_upc_logger.route_log_final') }}">
+        {% if is_continue_previous_store %}
+        <script>
+            window.location.replace('/upc_log_final?upc={{upc}}&store={{previous_store}}');
+        </script>
+        {% endif %}
+
+      <!--<form method="post" action="{{ url_for('app_upc_logger.route_log_final') }}">-->
         <label for="UPC">Title</label>
         <br>
         <input type="text" name="upc_value" readonly
-               value="{{upc_scanned}}"></input>
+               value="{{upc}}"></input>
         <br>
 
         <label for="content">Stores list</label>
@@ -26,11 +32,21 @@
           {% endfor %}
         </select>
         <br>
-        <button type="submit">Submit</button>
-      </form>
+        <button type="submit" onclick="handle_submit()">Submit</button>
+        <br><br><br>
+        {{message}}
+      <!--</form>-->
 
 
 
+    <script type="text/javascript">
+        function handle_submit() {
+            upc = document.querySelector('[name="upc_value"]').value;
+            store = document.querySelector('[name="store_value"]').value;
 
+            store_encoded = encodeURIComponent(store);
+            window.location.replace(`/upc_log_final?upc=${upc}&store=${store_encoded}`);
+        }
+    </script>
     </body>
 </html>
