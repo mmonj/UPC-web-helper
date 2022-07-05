@@ -39,62 +39,105 @@ STORE_INFO_FILE = './static/store_info.json'
 STORE_INFO_JS_FILE = './static/store_info.js'
 app_upc_logger = Blueprint('app_upc_logger', __name__)
 
+# class Session:
+#     grace_period_secs = 5 * 60
+#     last_processed_secs = 0
+#     previous_store = None
+
+#     @classmethod
+#     def reset_time(cls):
+#         cls.last_processed_secs = 0
+
+#     @classmethod
+#     def update_store(cls, store: str):
+#         cls.previous_store = store
+#         cls.last_processed_secs = time.time()
+
+#     @classmethod
+#     def get_previous_store(cls) -> str:
+#         return cls.previous_store
+
+#     @classmethod
+#     def is_continue_previous_store(cls) -> bool:
+#         return abs(time.time() - cls.last_processed_secs) < cls.grace_period_secs
+
 class SessionTracker:
     grace_period_secs = 5 * 60
-    last_processed_secs = 0
-    previous_store = None
+    sessions = {}
+    # Session skeleton
+    # SESSION = {
+    #     'previous_store': None,
+    #     'time_last_processed_secs': 0
+    # }
 
     @classmethod
-    def reset_time(cls):
-        cls.last_processed_secs = 0
+    def reset_time(cls, ip_address: str):
+        session = cls.sessions.get(ip_address, None)
+        if session is None:
+            cls.sessions[ip_address] = {}
+
+        cls.sessions[ip_address]['time_last_processed_secs'] = 0
 
     @classmethod
-    def update_store(cls, store: str):
-        cls.previous_store = store
-        cls.last_processed_secs = time.time()
+    def update_store(cls, store: str, ip_address: str):
+        session = cls.sessions.get(ip_address, None)
+        if session is None:
+            cls.sessions[ip_address] = {}
+
+        cls.sessions[ip_address]['previous_store'] = store
+        cls.sessions[ip_address]['time_last_processed_secs'] = time.time()
 
     @classmethod
-    def get_previous_store(cls) -> str:
-        return cls.previous_store
+    def get_previous_store(cls, ip_address: str) -> str:
+        return cls.sessions.get( ip_address, {} ).get('previous_store', None)
 
     @classmethod
-    def is_continue_previous_store(cls) -> bool:
-        return abs(time.time() - cls.last_processed_secs) < cls.grace_period_secs
+    def is_continue_previous_store(cls, ip_address: str) -> bool:
+        return abs(time.time() - cls.sessions.get( ip_address, {} ).get('time_last_processed_secs', 0) ) < cls.grace_period_secs
 
 
 @app_upc_logger.route("/test1")
 def test1_route():
-    HTML_TEMPLATE_FILE_PATH = '_test1.html'
+    logger.info(f'--> Headers: {request.headers}')
 
-    return render_template(HTML_TEMPLATE_FILE_PATH, stores=[1, 2])
+    return 'Success'
 
 @app_upc_logger.route("/upc_log_form")
 def route_log():
-    _assert_settings(request)
+    #logger.info('><')
+    #logger.info(f'upc_log_form: starting info: {SessionTracker.sessions}')
+    # _assert_settings(request)
     upc = request.args.get('upc')
+    ip_address = request.headers['X-Real-IP']
 
     if request.args.get("reset-store", default=False, type=bool):
-        SessionTracker.reset_time()
+        SessionTracker.reset_time(ip_address)
+        #logger.info(f'upc_log_form: After resetting: {SessionTracker.sessions}')
         if request.args.get("remove-upc", default=False, type=bool):
             store_name = request.args.get('store')
             remove_upc(upc, store_name)
 
+    #logger.info(f'upc_log_form: is_continue_previous_store: {SessionTracker.is_continue_previous_store(ip_address)}')
     stores = _get_stores()
     stores_list = [f for f in stores.keys() if f != 'all']
     return render_template(
         UPC_LOG_FORM_HTML_TEMPLATE,
         upc=upc,
         stores=stores_list,
-        is_continue_previous_store=SessionTracker.is_continue_previous_store(),
-        previous_store=SessionTracker.get_previous_store()
+        is_continue_previous_store=SessionTracker.is_continue_previous_store(ip_address),
+        previous_store=SessionTracker.get_previous_store(ip_address)
     )
 
 
 @app_upc_logger.route("/upc_log_final")
 def route_log_final():
+    #logger.info('><')
     upc = request.args.get('upc')
     store = request.args.get('store')
-    SessionTracker.update_store(store)
+    ip_address = request.headers['X-Real-IP']
+
+    SessionTracker.update_store(store, ip_address)
+    #logger.info(f'upc_log_final: After updating: {SessionTracker.sessions}')
     _dump_data(upc, store)
 
     return render_template(UPC_LOG_FINAL_HTML_TEMPLATE, upc=upc, store=store)
@@ -160,6 +203,7 @@ def create_pdf_with_upcs(trunc_upcs: list, product_names: list, pdf_path: str, c
     pdf_canvas = canvas.Canvas(pdf_path)
     pdf_canvas.setFont("Helvetica", 11)
     pdf_canvas.setTitle( PDF_TITLE_STRF.format(client_name=client_name.upper()) )
+
     start_x, start_y = 10, 720
     x, y = start_x, start_y
 
@@ -197,6 +241,7 @@ def create_pdf_with_upcs(trunc_upcs: list, product_names: list, pdf_path: str, c
 def create_pdf_with_imgs(urls: list, product_names: list, pdf_path: str, client_name: str):
     pdf_canvas = canvas.Canvas(pdf_path)
     pdf_canvas.setTitle( PDF_TITLE_STRF.format(client_name=client_name.upper()) )
+
     start_x, start_y = 10, 720
     x, y = start_x, start_y
 
@@ -236,6 +281,7 @@ def remove_upc(upc: str, store_name):
 
     truncated_upc = upc[1:-1]
     popped_item = stores[store_name].pop(truncated_upc, None)
+    logger.info(f'Popped {truncated_upc} from dict')
     logger.info(f'Popped {popped_item} from dict')
 
     _update_stores(stores)
