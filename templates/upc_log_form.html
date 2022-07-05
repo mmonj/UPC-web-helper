@@ -70,16 +70,50 @@
             <br>
             <input type="text" id="upc_value" readonly value="{{upc}}"></input>
             <br>
-
-            <label">Stores list</label>
             <br>
-            <select id="store_value" method="GET" action="/">
-              <option value="{{stores[0]}}" selected>{{stores[0]}}</option>
-              {% for store in stores[1:] %}
-                <option value="{{store}}">{{store}}</option>
-              {% endfor %}
+
+            <!--<label>Whose store?</label>-->
+            <!--<select id="person-value" method="GET" action="/">-->
+
+            <!--</select>-->
+            <!--<br>-->
+            <!--<br>-->
+
+
+            <!--<label">Choose a store</label>-->
+            <!--<br>-->
+            <!--<select id="store_value" method="GET" action="/">-->
+            <!--  <option value="{{stores[0]}}" selected>{{stores[0]}}</option>-->
+            <!--  {% for store in stores[1:] %}-->
+            <!--    <option value="{{store}}">{{store}}</option>-->
+            <!--  {% endfor %}-->
+            <!--</select>-->
+            <!--<br>-->
+
+
+
+
+
+
+
+            <label">Choose a store</label>
+            <br>
+            <select id="store_value">
+                <option value="Select a Store" selected>Select a Store</option>
+                    {% for category_name, stores_list in categorized_stores.items() %}
+                    <optgroup label="{{category_name}}">
+                        {% for store_name in stores_list %}
+                            <option value="{{store_name}}">{{store_name}}</option>
+                        {% endfor %}
+                    </optgroup>
+                    {% endfor %}
             </select>
             <br>
+
+
+
+
+
 
             <button type="submit" onclick="handle_submit()">Submit</button>
             <br>
@@ -100,6 +134,7 @@
                 // window.open(target_url, "_blank");
                 window.location.replace(target_url);
             }
+
         </script>
     </body>
 </html>

@@ -32,11 +32,15 @@ logger.addHandler(file_handler)
 INDEX_HTML_TEMPLATE = 'index.html'
 UPC_LOG_FORM_HTML_TEMPLATE = 'upc_log_form.html'
 UPC_LOG_FINAL_HTML_TEMPLATE = 'upc_log_final.html'
+TEST_TEMPLATE = '_test1.html'
 
 PDF_TITLE_STRF = '{client_name} order sheet - Crossmark.pdf'
 
 STORE_INFO_FILE = './static/store_info.json'
 STORE_INFO_JS_FILE = './static/store_info.js'
+CATEGORIZED_STORES_FILE = './static/stores_list_for_dropdown.json'
+CATEGORIZED_STORES_JAVASCRIPT_FILE = './static/js/stores_list_for_dropdown.js'
+
 app_upc_logger = Blueprint('app_upc_logger', __name__)
 
 # class Session:
@@ -98,26 +102,57 @@ class SessionTracker:
 
 @app_upc_logger.route("/test1")
 def test1_route():
-    logger.info(f'--> Headers: {request.headers}')
-
-    return 'Success'
-
-@app_upc_logger.route("/upc_log_form")
-def route_log():
     #logger.info('><')
-    #logger.info(f'upc_log_form: starting info: {SessionTracker.sessions}')
-    # _assert_settings(request)
+    with open(CATEGORIZED_STORES_FILE, 'r', encoding='utf8') as fd:
+        categorized_stores = json.load(fd)
+
+    mirror_to_js(categorized_stores)
+
     upc = request.args.get('upc')
     ip_address = request.headers['X-Real-IP']
 
     if request.args.get("reset-store", default=False, type=bool):
         SessionTracker.reset_time(ip_address)
-        #logger.info(f'upc_log_form: After resetting: {SessionTracker.sessions}')
         if request.args.get("remove-upc", default=False, type=bool):
             store_name = request.args.get('store')
             remove_upc(upc, store_name)
 
-    #logger.info(f'upc_log_form: is_continue_previous_store: {SessionTracker.is_continue_previous_store(ip_address)}')
+    stores = _get_stores()
+    stores_list = [f for f in stores.keys() if f != 'all']
+    return render_template(
+        TEST_TEMPLATE,
+        upc=upc,
+        stores=stores_list,
+        is_continue_previous_store=SessionTracker.is_continue_previous_store(ip_address),
+        previous_store=SessionTracker.get_previous_store(ip_address),
+        categorized_stores=categorized_stores
+    )
+
+
+def mirror_to_js(obj_: dict):
+    output = 'CATEGORIZED_STORES = ' + json.dumps(obj_, indent=4) + ';'
+
+    with open(CATEGORIZED_STORES_JAVASCRIPT_FILE, 'w', encoding='utf8') as fd:
+        fd.write(output)
+
+
+@app_upc_logger.route("/upc_log_form")
+def route_log_form():
+    #logger.info('><')
+    with open(CATEGORIZED_STORES_FILE, 'r', encoding='utf8') as fd:
+        categorized_stores = json.load(fd)
+
+    mirror_to_js(categorized_stores)
+
+    upc = request.args.get('upc')
+    ip_address = request.headers['X-Real-IP']
+
+    if request.args.get("reset-store", default=False, type=bool):
+        SessionTracker.reset_time(ip_address)
+        if request.args.get("remove-upc", default=False, type=bool):
+            store_name = request.args.get('store')
+            remove_upc(upc, store_name)
+
     stores = _get_stores()
     stores_list = [f for f in stores.keys() if f != 'all']
     return render_template(
@@ -125,7 +160,8 @@ def route_log():
         upc=upc,
         stores=stores_list,
         is_continue_previous_store=SessionTracker.is_continue_previous_store(ip_address),
-        previous_store=SessionTracker.get_previous_store(ip_address)
+        previous_store=SessionTracker.get_previous_store(ip_address),
+        categorized_stores=categorized_stores
     )
 
 
@@ -137,7 +173,6 @@ def route_log_final():
     ip_address = request.headers['X-Real-IP']
 
     SessionTracker.update_store(store, ip_address)
-    #logger.info(f'upc_log_final: After updating: {SessionTracker.sessions}')
     _dump_data(upc, store)
 
     return render_template(UPC_LOG_FINAL_HTML_TEMPLATE, upc=upc, store=store)
@@ -299,17 +334,19 @@ def _dump_data(upc: str, store_name: str) -> dict:
     truncated_upc = upc[1:-1]
     surrounding_digits = [upc[0], upc[-1]]
 
-    if stores[store_name].get(truncated_upc) is not None:
-        stores[store_name][truncated_upc]['instock'] = True
-        stores[store_name][truncated_upc]['time_scanned'] = now
-        stores[store_name][truncated_upc]['surrounding_digits'] = surrounding_digits
+    if stores.get(store_name) is None:
+        stores[store_name] = {}
 
-    else:
-        stores[store_name][truncated_upc] = {
-            'instock': True,
-            'time_scanned': now,
-            'surrounding_digits': surrounding_digits
-        }
+    # if stores[store_name].get(truncated_upc) is not None:
+    #     stores[store_name][truncated_upc]['instock'] = True
+    #     stores[store_name][truncated_upc]['time_scanned'] = now
+    #     stores[store_name][truncated_upc]['surrounding_digits'] = surrounding_digits
+
+    stores[store_name][truncated_upc] = {
+        'instock': True,
+        'time_scanned': now,
+        'surrounding_digits': surrounding_digits
+    }
 
     _update_stores(stores)
 
