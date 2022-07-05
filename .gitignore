@@ -5,3 +5,6 @@ tests/**
 store_info.json
 static/*
 *.log
+venv/**
+templates/_test*
+upc_logger/generated_pdfs/**
