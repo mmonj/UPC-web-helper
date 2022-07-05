@@ -1,58 +1,97 @@
 <html>
-  <head>
-     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css?family=Nunito+Sans:400,400i,700,900&display=swap" rel="stylesheet">
-  </head>
-    <style>
-        /*body {*/
-        /*text-align: center;*/
-        /*padding: 40px 0;*/
-        /*background: #EBF0F5;*/
-        /*}*/
-        input[type=text], select {
-          width: 100%;
-          padding: 12px 20px;
-          margin: 8px 0;
-          display: inline-block;
-          border: 1px solid #ccc;
-          border-radius: 4px;
-          box-sizing: border-box;
-        }
+    </head>
+        <style>
+            /*body {*/
+            /*text-align: center;*/
+            /*padding: 40px 0;*/
+            /*background: #EBF0F5;*/
+            /*}*/
+            input[type=text], select {
+              width: 100%;
+              padding: 12px 20px;
+              margin: 8px 0;
+              display: inline-block;
+              border: 1px solid #ccc;
+              border-radius: 4px;
+              box-sizing: border-box;
+            }
 
-        button[type=submit] {
-          width: 100%;
-          background-color: #0276FF;
-          color: white;
-          padding: 14px 20px;
-          margin: 8px 0;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-        }
+            button[type=submit] {
+              width: 100%;
+              background-color: #0276FF;
+              color: white;
+              padding: 14px 20px;
+              margin: 8px 0;
+              border: none;
+              border-radius: 4px;
+              cursor: pointer;
+            }
 
-        button[type=submit]:hover {
-          background-color: #0057bd;
-        }
+            button[type=submit]:hover {
+              background-color: #0057bd;
+            }
 
-        .main-div {
-            margin-left: auto;
-            margin-right: auto;
-            border-radius: 5px;
-            background-color: #f2f2f2;
-            padding: 20px;
+            .main-div {
+                margin-left: auto;
+                margin-right: auto;
+                border-radius: 5px;
+                background-color: #f2f2f2;
+                padding: 20px;
+            }
+            .logo {
+                display: block;
+                margin-left: auto;
+                margin-right: auto;
+                width: 100%;
+                /*width: auto;*/
+                /*height: auto;*/
+              /*object-fit: cover;*/
+              /*width: 100%;*/
+              /*min-height: 100%;*/
+            }
+        </style>
+
+        <script type="text/javascript" src="{{url_for('static', filename='js/stores_list_for_dropdown.js')}}"></script>
+        <script type="text/javascript">
+            function handle_submit() {
+                upc = document.querySelector('#upc_value').value;
+                store = document.querySelector('#store_value').value;
+
+                store_encoded = encodeURIComponent(store);
+                target_url = `/upc_log_final?upc=${upc}&store=${store_encoded}`;
+                console.log(target_url);
+                // window.open(target_url, "_blank");
+                window.location.replace(target_url);
+            }
+        </script>
+        <script type="text/javascript">
+        function clear_options(select_node) {
+            select_node.innerHTML = '';
+            // select_node.options.length = 0;
+            // for (let option of select_node.options) {
+            //     select_node.options.remove(0);
+            // }
         }
-        .logo {
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-            width: 100%;
-            /*width: auto;*/
-            /*height: auto;*/
-          /*object-fit: cover;*/
-          /*width: 100%;*/
-          /*min-height: 100%;*/
-        }
-    </style>
+        </script>
+
+        <script>
+            function populate_dropdown_menu(select_node, option_values_list) {
+                clear_options(select_node);
+
+                for(let store of option_values_list) {
+                    var option_node = document.createElement("option");
+                    option_node.textContent = store;
+                    option_node.value = store;
+                    select_node.appendChild(option_node);
+                }
+            }
+        </script>
+
+
+
     <body>
         <div class="main-div" style="max-height:1000px; max-width:1000px;">
             {% if is_continue_previous_store %}
@@ -72,42 +111,21 @@
             <br>
             <br>
 
-            <!--<label>Whose store?</label>-->
-            <!--<select id="person-value" method="GET" action="/">-->
-
-            <!--</select>-->
-            <!--<br>-->
-            <!--<br>-->
-
-
-            <!--<label">Choose a store</label>-->
-            <!--<br>-->
-            <!--<select id="store_value" method="GET" action="/">-->
-            <!--  <option value="{{stores[0]}}" selected>{{stores[0]}}</option>-->
-            <!--  {% for store in stores[1:] %}-->
-            <!--    <option value="{{store}}">{{store}}</option>-->
-            <!--  {% endfor %}-->
-            <!--</select>-->
-            <!--<br>-->
+            <label>Whose store?</label>
+            <select id="person-value" method="GET" action="/">
+                {% for category, resulting_list in categorized_stores.items() %}
+                <option value="{{category}}">{{category}}</option>
+                {% endfor %}
+            </select>
+            <br>
+            <br>
 
 
-
-
-
-
-
-            <label">Choose a store</label>
+            <label>Select a store</label>
             <br>
             <select id="store_value">
-                <option value="Select a Store" selected>Select a Store</option>
-                    {% for category_name, stores_list in categorized_stores.items() %}
-                    <optgroup label="{{category_name}}">
-                        {% for store_name in stores_list %}
-                            <option value="{{store_name}}">{{store_name}}</option>
-                        {% endfor %}
-                    </optgroup>
-                    {% endfor %}
             </select>
+            <br>
             <br>
 
 
@@ -123,18 +141,20 @@
             {{message}}
         </div>
 
+
+
         <script type="text/javascript">
-            function handle_submit() {
-                upc = document.querySelector('#upc_value').value;
-                store = document.querySelector('#store_value').value;
+            let person_select_node = document.querySelector('#person-value');
+            let stores_select_node = document.querySelector('#store_value');
 
-                store_encoded = encodeURIComponent(store);
-                target_url = `/upc_log_final?upc=${upc}&store=${store_encoded}`;
-                console.log(target_url);
-                // window.open(target_url, "_blank");
-                window.location.replace(target_url);
-            }
+            populate_dropdown_menu(stores_select_node, CATEGORIZED_STORES[person_select_node.value]);
 
+            person_select_node.addEventListener('change', (event) => {
+                let cat_ = person_select_node.value;
+                populate_dropdown_menu(stores_select_node, CATEGORIZED_STORES[cat_]);
+            });
         </script>
+
+
     </body>
 </html>

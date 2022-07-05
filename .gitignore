@@ -8,3 +8,4 @@ static/*
 venv/**
 templates/_test*
 upc_logger/generated_pdfs/**
+*_sessions.json

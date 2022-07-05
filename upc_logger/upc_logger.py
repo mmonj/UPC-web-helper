@@ -43,36 +43,29 @@ CATEGORIZED_STORES_JAVASCRIPT_FILE = './static/js/stores_list_for_dropdown.js'
 
 app_upc_logger = Blueprint('app_upc_logger', __name__)
 
-# class Session:
-#     grace_period_secs = 5 * 60
-#     last_processed_secs = 0
-#     previous_store = None
-
-#     @classmethod
-#     def reset_time(cls):
-#         cls.last_processed_secs = 0
-
-#     @classmethod
-#     def update_store(cls, store: str):
-#         cls.previous_store = store
-#         cls.last_processed_secs = time.time()
-
-#     @classmethod
-#     def get_previous_store(cls) -> str:
-#         return cls.previous_store
-
-#     @classmethod
-#     def is_continue_previous_store(cls) -> bool:
-#         return abs(time.time() - cls.last_processed_secs) < cls.grace_period_secs
 
 class SessionTracker:
     grace_period_secs = 5 * 60
+    sessions_json_path = './upc_logger/upc_logger_sessions.json'
     sessions = {}
     # Session skeleton
     # SESSION = {
     #     'previous_store': None,
     #     'time_last_processed_secs': 0
     # }
+
+    @classmethod
+    def load_sessions(cls):
+        if not os.path.isfile(cls.sessions_json_path):
+            cls.save_sessions()
+
+        with open(cls.sessions_json_path, 'r', encoding='utf8') as fd:
+            cls.sessions = json.load(fd)
+
+    @classmethod
+    def save_sessions(cls):
+        with open(cls.sessions_json_path, 'w', encoding='utf8') as fd:
+            json.dump(cls.sessions, fd, indent=4)
 
     @classmethod
     def reset_time(cls, ip_address: str):
@@ -103,6 +96,8 @@ class SessionTracker:
 @app_upc_logger.route("/test1")
 def test1_route():
     #logger.info('><')
+    SessionTracker.load_sessions()
+
     with open(CATEGORIZED_STORES_FILE, 'r', encoding='utf8') as fd:
         categorized_stores = json.load(fd)
 
@@ -119,6 +114,9 @@ def test1_route():
 
     stores = _get_stores()
     stores_list = [f for f in stores.keys() if f != 'all']
+
+    SessionTracker.save_sessions()
+
     return render_template(
         TEST_TEMPLATE,
         upc=upc,
@@ -138,7 +136,9 @@ def mirror_to_js(obj_: dict):
 
 @app_upc_logger.route("/upc_log_form")
 def route_log_form():
-    #logger.info('><')
+    logger.info('><')
+    SessionTracker.load_sessions()
+
     with open(CATEGORIZED_STORES_FILE, 'r', encoding='utf8') as fd:
         categorized_stores = json.load(fd)
 
@@ -146,6 +146,11 @@ def route_log_form():
 
     upc = request.args.get('upc')
     ip_address = request.headers['X-Real-IP']
+
+    logger.info(ip_address)
+    logger.info(f'is continue prev store: {SessionTracker.is_continue_previous_store(ip_address)}')
+    logger.info(f'reset-store-arg: {request.args.get("reset-store", default=False, type=bool)}')
+    logger.info(SessionTracker.sessions)
 
     if request.args.get("reset-store", default=False, type=bool):
         SessionTracker.reset_time(ip_address)
@@ -155,6 +160,9 @@ def route_log_form():
 
     stores = _get_stores()
     stores_list = [f for f in stores.keys() if f != 'all']
+
+    SessionTracker.save_sessions()
+
     return render_template(
         UPC_LOG_FORM_HTML_TEMPLATE,
         upc=upc,
@@ -168,12 +176,16 @@ def route_log_form():
 @app_upc_logger.route("/upc_log_final")
 def route_log_final():
     #logger.info('><')
+    SessionTracker.load_sessions()
+
     upc = request.args.get('upc')
     store = request.args.get('store')
     ip_address = request.headers['X-Real-IP']
 
     SessionTracker.update_store(store, ip_address)
     _dump_data(upc, store)
+
+    SessionTracker.save_sessions()
 
     return render_template(UPC_LOG_FINAL_HTML_TEMPLATE, upc=upc, store=store)
 
