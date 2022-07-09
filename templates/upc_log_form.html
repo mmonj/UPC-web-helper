@@ -9,7 +9,7 @@
             /*padding: 40px 0;*/
             /*background: #EBF0F5;*/
             /*}*/
-            input[type=text], select {
+            input[type=text], input[type=number], select {
               width: 100%;
               padding: 12px 20px;
               margin: 8px 0;
@@ -60,6 +60,10 @@
                 upc = document.querySelector('#upc_value').value;
                 store = document.querySelector('#store_value').value;
 
+                if (is_bad_upc('#upc_value')) {
+                    return;
+                }
+
                 store_encoded = encodeURIComponent(store);
                 target_url = `/upc_log_final?upc=${upc}&store=${store_encoded}`;
                 console.log(target_url);
@@ -74,6 +78,17 @@
             // for (let option of select_node.options) {
             //     select_node.options.remove(0);
             // }
+        }
+        </script>
+
+        <script type="text/javascript">
+        function is_bad_upc(selector_) {
+            let upc_el = document.querySelector(selector_);
+            if (upc_el.value.length != 12) {
+                document.querySelector('#error-id').style.display = "block";
+            }
+
+            return upc_el.value.length != 12;
         }
         </script>
 
@@ -94,20 +109,16 @@
 
     <body>
         <div class="main-div" style="max-height:1000px; max-width:1000px;">
-            {% if is_continue_previous_store %}
-            <script>
-                // window.open('/upc_log_final?upc={{upc}}&store={{previous_store}}', "_blank");
-                window.location.replace('/upc_log_final?upc={{upc}}&store={{previous_store}}');
-            </script>
-            {% endif %}
-
             <img style="max-height:500px; max-width:500px;" class="logo" id="crossmark-logo" src="{{url_for('static', filename='images/crossmark-logo-1.png')}}"/>
             <br>
             <br>
 
             <label>UPC number scanned</label>
             <br>
-            <input type="text" id="upc_value" readonly value="{{upc}}"></input>
+            <input type="number" id="upc_value" readonly value="{{upc}}"></input>
+            <div id="error-id" style="color:red;display:none">
+                <p>Error. UPC number must be 12 digits</p>
+            </div>
             <br>
             <br>
 
@@ -141,6 +152,11 @@
             {{message}}
         </div>
 
+        {% if is_continue_previous_store %}
+        <script>
+            window.location.replace('/upc_log_final?upc={{upc}}&store={{previous_store}}');
+        </script>
+        {% endif %}
 
 
         <script type="text/javascript">

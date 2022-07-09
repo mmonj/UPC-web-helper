@@ -9,7 +9,7 @@ import requests
 import time
 import unicodedata
 from textwrap import wrap
-from flask import Blueprint, render_template, request, send_file
+from flask import Blueprint, render_template, request, send_file, jsonify
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import cm
 from reportlab.lib.utils import ImageReader
@@ -95,7 +95,7 @@ class SessionTracker:
 
 @app_upc_logger.route("/test1")
 def test1_route():
-    #logger.info('><')
+    # logger.info('><')
     SessionTracker.load_sessions()
 
     with open(CATEGORIZED_STORES_FILE, 'r', encoding='utf8') as fd:
@@ -105,6 +105,11 @@ def test1_route():
 
     upc = request.args.get('upc')
     ip_address = request.headers['X-Real-IP']
+
+    logger.info(ip_address)
+    logger.info(f'is continue prev store: {SessionTracker.is_continue_previous_store(ip_address)}')
+    logger.info(f'reset-store-arg: {request.args.get("reset-store", default=False, type=bool)}')
+    logger.info(SessionTracker.sessions)
 
     if request.args.get("reset-store", default=False, type=bool):
         SessionTracker.reset_time(ip_address)
@@ -136,7 +141,7 @@ def mirror_to_js(obj_: dict):
 
 @app_upc_logger.route("/upc_log_form")
 def route_log_form():
-    logger.info('><')
+    # logger.info('><')
     SessionTracker.load_sessions()
 
     with open(CATEGORIZED_STORES_FILE, 'r', encoding='utf8') as fd:
@@ -147,10 +152,10 @@ def route_log_form():
     upc = request.args.get('upc')
     ip_address = request.headers['X-Real-IP']
 
-    logger.info(ip_address)
-    logger.info(f'is continue prev store: {SessionTracker.is_continue_previous_store(ip_address)}')
-    logger.info(f'reset-store-arg: {request.args.get("reset-store", default=False, type=bool)}')
-    logger.info(SessionTracker.sessions)
+    # logger.info(ip_address)
+    # logger.info(f'is continue prev store: {SessionTracker.is_continue_previous_store(ip_address)}')
+    # logger.info(f'reset-store-arg: {request.args.get("reset-store", default=False, type=bool)}')
+    # logger.info(SessionTracker.sessions)
 
     if request.args.get("reset-store", default=False, type=bool):
         SessionTracker.reset_time(ip_address)
@@ -190,8 +195,21 @@ def route_log_final():
     return render_template(UPC_LOG_FINAL_HTML_TEMPLATE, upc=upc, store=store)
 
 
+@app_upc_logger.route("/upc_remover", methods=['GET', 'POST'])
+def route_upc_remover():
+    if request.method == 'POST':
+        content = request.json
+        logger.info('>> upc remover route <<')
+        logger.info(content)
+
+        remove_upc(content['upc'], content['store'])
+        return jsonify( {'Success': True, 'message': f'Removed UPC {content["upc"]}'} ), 200
+    else:
+        return jsonify( {'Success': False, 'message': 'Received no data'} ), 400
+
+
 @app_upc_logger.route("/barcode_getter")
-def barcode_getter():
+def route_barcode_getter():
     client_name = request.args.get('client-name')
     store_name = request.args.get('store-name')
     product_names = request.args.getlist("product-names")
@@ -324,6 +342,7 @@ def create_pdf_with_imgs(urls: list, product_names: list, pdf_path: str, client_
 
 
 def remove_upc(upc: str, store_name):
+    logger.info('>> remove_upc func <<')
     stores = _get_stores()
 
     truncated_upc = upc[1:-1]

@@ -66,23 +66,50 @@
 
         <h1>UPC saved successfully</h1>
 
-        <p>Scanned {{upc}}<br><br>{{store}}<br><br></p>
+        <p>Scanned &amp; saved {{upc}}<br><br>{{store}}<br><br></p>
 
-        <button type="submit" id="reset-store" onclick="handle_reset(false)">Switch Store</button>
+        <button type="submit" id="remove-upc" onclick="handle_upc_removal()">Remove UPC</button>
         <br>
         <br>
-        <button type="submit" id="reset-and-remove" onclick="handle_reset(true)">Remove UPC &amp; Switch Store</button>
+        
+        <button type="submit" id="reset-and-remove" onclick="handle_reset_store_and_upc_remove()">Switch Store &amp; Remove UPC</button>
+        <br>
+        <br>
+        
+        <label id="hidden-label" style="color:red;display:none">UPC Removed. You may now go back to scanner</label>
         <br>
       </div>
-
-        <script type="text/javascript">
-            function handle_reset(is_remove_upc) {
-                target_url = '/upc_log_form?upc={{upc}}&reset-store=true';
-                if (is_remove_upc) {
-                    target_url += '&remove-upc=true&store={{store}}';
-                }
+      
+      
+        <script>
+            function handle_upc_removal() {
+                let xhr = new XMLHttpRequest();
+                let url = "/upc_remover";
+                let upc_removal_data = {
+                    'upc': '{{upc}}', 
+                    'store': '{{store}}'
+                };
+                
+                xhr.open("POST", url, true);
+                xhr.setRequestHeader("Content-Type", "application/json");
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === 4 && xhr.status === 200) {
+                        // console.log(xhr.responseText);
+                        document.querySelector('#hidden-label').style.display = 'block';
+                    }
+                };
+                let data = JSON.stringify(upc_removal_data);
+                xhr.send(data);
+            }
+        </script>
+        <script>
+            function handle_reset_store_and_upc_remove() {
+                target_url = '/upc_log_form?upc={{upc}}&store={{store}}&reset-store=true&remove-upc=true';
                 window.location.replace(target_url);
             }
         </script>
+        
+        
+        
     </body>
 </html>
