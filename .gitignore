@@ -2,7 +2,8 @@ __pycache__/**
 item dumps/**
 tests/**
 store_info.json
-static/data/*
+static/data/**
+static/images/**
 venv/**
 templates/_test*
 upc_logger/generated_pdfs/**
