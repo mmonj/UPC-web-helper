@@ -71,25 +71,25 @@
         <button type="submit" id="remove-upc" onclick="handle_upc_removal()">Remove UPC</button>
         <br>
         <br>
-        
+
         <button type="submit" id="reset-and-remove" onclick="handle_reset_store_and_upc_remove()">Switch Store &amp; Remove UPC</button>
         <br>
         <br>
-        
+
         <label id="hidden-label" style="color:red;display:none">UPC Removed. You may now go back to scanner</label>
         <br>
       </div>
-      
-      
+
+
         <script>
             function handle_upc_removal() {
                 let xhr = new XMLHttpRequest();
                 let url = "/upc_remover";
                 let upc_removal_data = {
-                    'upc': '{{upc}}', 
+                    'upc': '{{upc}}',
                     'store': '{{store}}'
                 };
-                
+
                 xhr.open("POST", url, true);
                 xhr.setRequestHeader("Content-Type", "application/json");
                 xhr.onreadystatechange = function () {
@@ -108,8 +108,8 @@
                 window.location.replace(target_url);
             }
         </script>
-        
-        
-        
+
+
+
     </body>
 </html>

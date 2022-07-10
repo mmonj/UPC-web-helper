@@ -36,10 +36,10 @@ TEST_TEMPLATE = '_test1.html'
 
 PDF_TITLE_STRF = '{client_name} order sheet - Crossmark.pdf'
 
-STORE_INFO_FILE = './static/store_info.json'
-STORE_INFO_JS_FILE = './static/store_info.js'
-CATEGORIZED_STORES_FILE = './static/stores_list_for_dropdown.json'
-CATEGORIZED_STORES_JAVASCRIPT_FILE = './static/js/stores_list_for_dropdown.js'
+STORE_INFO_FILE = './static/data/store_info.json'
+STORE_INFO_JS_FILE = './static/data/store_info.js'
+CATEGORIZED_STORES_FILE = './static/data/stores_list_for_dropdown.json'
+CATEGORIZED_STORES_JAVASCRIPT_FILE = './static/data/stores_list_for_dropdown.js'
 
 app_upc_logger = Blueprint('app_upc_logger', __name__)
 
