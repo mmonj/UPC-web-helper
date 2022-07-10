@@ -1,11 +1,12 @@
-__pycache__
-item dump*
+__pycache__/**
+item dumps/**
 tests/**
-*.lnk
 store_info.json
-static/*
-*.log
+static/data/*
 venv/**
 templates/_test*
 upc_logger/generated_pdfs/**
-*_sessions.json
+*.json
+*.lnk
+*.log
+
