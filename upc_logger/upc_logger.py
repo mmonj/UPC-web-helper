@@ -95,41 +95,19 @@ class SessionTracker:
 
 @app_upc_logger.route("/test1")
 def test1_route():
-    # logger.info('><')
-    SessionTracker.load_sessions()
-
-    with open(CATEGORIZED_STORES_FILE, 'r', encoding='utf8') as fd:
-        categorized_stores = json.load(fd)
-
-    mirror_to_js(categorized_stores)
+    #logger.info('><')
+    # SessionTracker.load_sessions()
 
     upc = request.args.get('upc')
+    store = request.args.get('store')
     ip_address = request.headers['X-Real-IP']
 
-    logger.info(ip_address)
-    logger.info(f'is continue prev store: {SessionTracker.is_continue_previous_store(ip_address)}')
-    logger.info(f'reset-store-arg: {request.args.get("reset-store", default=False, type=bool)}')
-    logger.info(SessionTracker.sessions)
+    # SessionTracker.update_store(store, ip_address)
+    # _dump_data(upc, store)
 
-    if request.args.get("reset-store", default=False, type=bool):
-        SessionTracker.reset_time(ip_address)
-        if request.args.get("remove-upc", default=False, type=bool):
-            store_name = request.args.get('store')
-            remove_upc(upc, store_name)
+    # SessionTracker.save_sessions()
 
-    stores = _get_stores()
-    stores_list = [f for f in stores.keys() if f != 'all']
-
-    SessionTracker.save_sessions()
-
-    return render_template(
-        TEST_TEMPLATE,
-        upc=upc,
-        stores=stores_list,
-        is_continue_previous_store=SessionTracker.is_continue_previous_store(ip_address),
-        previous_store=SessionTracker.get_previous_store(ip_address),
-        categorized_stores=categorized_stores
-    )
+    return render_template(TEST_TEMPLATE, upc=upc, store=store)
 
 
 def mirror_to_js(obj_: dict):
@@ -195,15 +173,25 @@ def route_log_final():
     return render_template(UPC_LOG_FINAL_HTML_TEMPLATE, upc=upc, store=store)
 
 
-@app_upc_logger.route("/upc_remover", methods=['GET', 'POST'])
-def route_upc_remover():
+@app_upc_logger.route("/direct_update", methods=['GET', 'POST'])
+def route_direct_update():
     if request.method == 'POST':
         content = request.json
-        logger.info('>> upc remover route <<')
+        logger.info('>> "/direct_update" route <<')
         logger.info(content)
 
-        remove_upc(content['upc'], content['store'])
-        return jsonify( {'Success': True, 'message': f'Removed UPC {content["upc"]}'} ), 200
+        # if len(content['upc']) != 12:
+        #     logger.info(f'Length of "{content["upc"]}" is {len(content["upc"])}, instead of the required 12')
+        #     return jsonify( {'Success': False, 'message': f'Length of "{content["upc"]}" is {len(content["upc"])}, instead of the required 12'} ), 400
+
+        if content['action'] == 'remove':
+            remove_upc(content['upc'], content['store'])
+            return jsonify( {'Success': True, 'message': f'Removed UPC {content["upc"]}'} ), 200
+        elif content['action'] == 'add':
+            _dump_data(content['upc'], content['store'])
+            return jsonify( {'Success': True, 'message': f'Added UPC {content["upc"]}'} ), 200
+
+        jsonify( {'Success': False, 'message': 'Internal server did not complete intended action'} ), 400
     else:
         return jsonify( {'Success': False, 'message': 'Received no data'} ), 400
 
@@ -347,8 +335,7 @@ def remove_upc(upc: str, store_name):
 
     truncated_upc = upc[1:-1]
     popped_item = stores[store_name].pop(truncated_upc, None)
-    logger.info(f'Popped {truncated_upc} from dict')
-    logger.info(f'Popped {popped_item} from dict')
+    logger.info(f'Popped from dict: key {repr(truncated_upc)} == {popped_item}')
 
     _update_stores(stores)
 
@@ -359,6 +346,9 @@ def _get_stores() -> dict:
 
 
 def _dump_data(upc: str, store_name: str) -> dict:
+    '''
+    updates data with upc and store_name passed in
+    '''
     ts = time.time() - (4 * 3600)
     now = datetime.datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d at %I:%M:%S %p')
     stores = _get_stores()
@@ -378,6 +368,8 @@ def _dump_data(upc: str, store_name: str) -> dict:
         'time_scanned': now,
         'surrounding_digits': surrounding_digits
     }
+
+    logger.info(f'Added to dict: key {repr(truncated_upc)}, store: {store_name}')
 
     _update_stores(stores)
 
