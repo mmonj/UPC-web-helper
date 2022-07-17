@@ -22,9 +22,8 @@ function handle_submit() {
 
     store_encoded = encodeURIComponent(store);
     target_url = `/upc_log_final?upc=${upc}&store=${store_encoded}`;
-    console.log(target_url);
 
-    // window.location.replace(target_url);
+    window.location.replace(target_url);
 }
 
 function populate_dropdown_menu(select_node, option_values_list) {

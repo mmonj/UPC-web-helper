@@ -1,78 +1,37 @@
 <html>
-  <head>
-    <link href="https://fonts.googleapis.com/css?family=Nunito+Sans:400,400i,700,900&display=swap" rel="stylesheet">
-  </head>
-    <style>
-        button[type=submit] {
-            background-color: #0276FF;
-            border: none;
-            border-radius: 5px;
-            color: white;
-            /*width: 200px;*/
-            /*height: 30px;*/
-            padding: 15px 32px;
-            cursor: pointer;
-        }
-        button[type=submit]:hover {
-          background-color: #0057bd;
-        }
-        body {
-            text-align: center;
-            padding: 40px 0;
-            padding-top: 20px;
-            background: #EBF0F5;
-        }
-        .check-mark-div {
-            border-radius: 100px;
-            height: 130px;
-            width: 130px;
-            background: #F8FAF5;
-            margin: 0 auto;
-        }
-        h1 {
-            color: #88B04B;
-            font-family: "Nunito Sans", "Helvetica Neue", sans-serif;
-            font-weight: 700;
-            font-size: 40px;
-            margin-bottom: 10px;
-        }
-        p {
-            color: #404F5E;
-            font-family: "Nunito Sans", "Helvetica Neue", sans-serif;
-            font-size: 20px;
-            margin: 0;
-        }
-        i {
-            color: #9ABC66;
-            font-size: 100px;
-            line-height: 140px;
-            margin-left:-15px;
-        }
-        .card {
-            background: white;
-            padding: 60px;
-            padding-top: 20px;
-            border-radius: 4px;
-            box-shadow: 0 2px 3px #C8D0D8;
-            display: inline-block;
-            margin: 0 auto;
-        }
-    </style>
+    <head>
+        <link href="https://fonts.googleapis.com/css?family=Nunito+Sans:400,400i,700,900&display=swap" rel="stylesheet">
+        <script type="text/javascript" src="{{url_for('static', filename='js/upc_log_final.js')}}"></script>
+        <link href="{{url_for('static', filename='styles/upc_log_final.css')}}" rel="stylesheet">
+    </head>
     <body>
       <div class="card">
-        <div class="check-mark-div">
-            <i class="checkmark">✓</i>
-        </div>
+        <!--<div class="check-mark-div">-->
+        <!--    <i class="checkmark">✓</i>-->
+        <!--</div>-->
 
         <h1>UPC saved successfully</h1>
 
-        <p>Scanned &amp; saved {{upc}}<br><br>{{store}}<br><br></p>
+        <p class="scan-confirmation">Scanned &amp; saved {{upc}}<br><br>{{store}}<br><br></p>
 
-        <button type="submit" id="remove-upc" onclick="handle_upc_removal()">Remove UPC</button>
+        <div id="manually-add-upc-button-div" style="display:block">
+            <button type="submit" onclick="handle_add_new_upc()">Manually Add New UPC</button>
+        </div>
+
+        <div id="add-upc-input-div" style="display:none">
+            <input type="number" id="add-upc-input" placeholder="UPC number (12 digits)" style="font-size:16px">
+            <br>
+            <button type="submit" id="submit-new-upc" onclick="submit_add_new_upc()" style="weight:800; font-size:16px">Submit</button>
+            <button type="submit" id="remove-manually-typed-upc" onclick="submit_remove_manually_typed_upc()" style="weight:800; font-size:16px">Delete</button>
+            <br>
+        </div>
+            <p><span id="upc-length-error" style="display:none; transition:0.08s; font-size:18;">Error. UPC number must be 12 digits</span></p>
+
+        <button type="submit" id="remove-upc" onclick="submit_upc_removal()">Remove UPC</button>
         <br>
         <br>
 
-        <button type="submit" id="reset-and-remove" onclick="handle_reset_store_and_upc_remove()">Switch Store &amp; Remove UPC</button>
+        <button type="submit" id="reset-and-remove" onclick="submit_reset_store_and_upc_remove()">Switch Store &amp; Remove UPC</button>
         <br>
         <br>
 
@@ -80,36 +39,9 @@
         <br>
       </div>
 
-
-        <script>
-            function handle_upc_removal() {
-                let xhr = new XMLHttpRequest();
-                let url = "/upc_remover";
-                let upc_removal_data = {
-                    'upc': '{{upc}}',
-                    'store': '{{store}}'
-                };
-
-                xhr.open("POST", url, true);
-                xhr.setRequestHeader("Content-Type", "application/json");
-                xhr.onreadystatechange = function () {
-                    if (xhr.readyState === 4 && xhr.status === 200) {
-                        // console.log(xhr.responseText);
-                        document.querySelector('#hidden-label').style.display = 'block';
-                    }
-                };
-                let data = JSON.stringify(upc_removal_data);
-                xhr.send(data);
-            }
-        </script>
-        <script>
-            function handle_reset_store_and_upc_remove() {
-                target_url = '/upc_log_form?upc={{upc}}&store={{store}}&reset-store=true&remove-upc=true';
-                window.location.replace(target_url);
-            }
-        </script>
-
-
-
+      <script>
+          var store_name = "{{store}}";
+          var upc_number = "{{upc}}";
+      </script>
     </body>
 </html>
