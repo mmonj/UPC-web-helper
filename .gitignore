@@ -1,4 +1,5 @@
 __pycache__
+data - product images
 item dumps/**
 tests/**
 store_info.json
@@ -10,4 +11,4 @@ upc_logger/generated_pdfs/**
 *.json
 *.lnk
 *.log
-
+*.pdf
