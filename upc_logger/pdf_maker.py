@@ -4,13 +4,11 @@ import json
 import logging
 import os
 import requests
-import time
 from PIL import Image, ImageOps, ImageChops
 from textwrap import wrap
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import cm
 from reportlab.lib.utils import ImageReader
-
 
 
 ##
@@ -37,11 +35,11 @@ ITEM_INFO_GET_URL = 'https://api.upcitemdb.com/prod/trial/lookup?upc={upc_number
 IMAGE_URL_PREFERENCES = ['target.com', 'target.scene', 'quill.com', 'walmartimages.com', 'unbeatablesale.com', 'officedepot.com', 'neweggimages.com', 'newegg.com']
 
 
-def create_pdf_with_upcs(full_upcs: list, product_names: list, pdf_path: str, client_name: str):
+def create_pdf_with_upcs(items: dict, pdf_path: str, client_name: str):
     pdf_canvas = canvas.Canvas(pdf_path)
     pdf_canvas.setFont("Helvetica", 11)
-    # pdf_canvas.setTitle( PDF_TITLE_STRF.format(client_name=client_name.upper()) )
-    pdf_canvas.setTitle( f'{client_name.upper()} sheet ({len(full_upcs)}) Crossmark' )
+    # pdf_canvas.setTitle( PDF_TITLE_STRF.format(client_name=client_name) )
+    pdf_canvas.setTitle( f'{client_name} sheet ({len(items)}) Crossmark' )
 
     start_x, start_y = 0, 660
     curr_x, curr_y = start_x, start_y
@@ -51,7 +49,8 @@ def create_pdf_with_upcs(full_upcs: list, product_names: list, pdf_path: str, cl
     product_max_width = 3*cm
     product_max_height = 4.5*cm
 
-    product_names_split_list = get_product_names_split_list(product_names)
+    split_product_names(items)
+    # product_names_split_list = get_product_names_split_list( list(items.values()) )
 
     writer_options = {
         'module_height': 20,
@@ -63,23 +62,24 @@ def create_pdf_with_upcs(full_upcs: list, product_names: list, pdf_path: str, cl
     client_logo = get_client_logo(client_name)
     pdf_canvas.drawImage(client_logo, 156, 770, width=10*cm, height=2.1*cm, preserveAspectRatio=True, anchor='c', mask='auto')
 
-    for i, full_upc in enumerate(full_upcs):
-        text_height = get_this_rows_text_height(i, product_names_split_list)
-        # print(f'Max height: {text_height} ; idx: {i}')
+    for i, upc in enumerate(items.keys()):
+        # text_height = get_this_rows_text_height(i, product_names_split_list)
+        text_height = get_this_rows_text_height(i, items)
 
-        product_image = get_product_image_bytes(full_upc, client_name)
+        product_image = get_product_image_bytes(upc, client_name)
         if product_image is None:
-            logger.info(f'Product image is None for UPC {full_upc}')
+            logger.info(f'Product image is None for UPC {upc}')
             continue
 
-        upc_obj = barcode.get('upc', full_upc, writer=barcode.writer.ImageWriter())
+        upc_obj = barcode.get('upc', upc, writer=barcode.writer.ImageWriter())
         barcode_image = ImageReader( upc_obj.render(writer_options=writer_options) )
 
         temp_y = curr_y - 15
-        product_name_split: list = product_names_split_list[i]
+        # product_name_split: list = product_names_split_list[i]
+        product_name_split = items[upc]['name_split']
 
-        # draw string: full_upc
-        pdf_canvas.drawString(curr_x + 19, curr_y + 2, full_upc)
+        # draw string: upc
+        pdf_canvas.drawString(curr_x + 19, curr_y + 2, upc)
         for product_name_line in product_name_split:
             pdf_canvas.drawCentredString(curr_x + 100, temp_y, product_name_line)
             temp_y -= 13
@@ -102,7 +102,7 @@ def create_pdf_with_upcs(full_upcs: list, product_names: list, pdf_path: str, cl
 
 
 def get_product_image_bytes(upc: str, client_name: str) -> object:
-    upc_image_file_path = os.path.join(PRODUCT_IMAGES_BASE_DIR, client_name.upper(), upc + '.jpg')
+    upc_image_file_path = os.path.join(PRODUCT_IMAGES_BASE_DIR, client_name, upc + '.jpg')
     if os.path.isfile(upc_image_file_path):
         with open(upc_image_file_path, 'rb') as fd:
             return ImageReader(io.BytesIO( fd.read() ))
@@ -168,14 +168,14 @@ def get_product_image_url(upc: str) -> str:
     return image_urls[0]
 
 
-def lookup_upc_data(full_upcs: list, client_name: str):
+def lookup_upc_data(items: dict, client_name: str):
     '''
     GETs and saves response json data to file; does not download or process any further data
-    :param full_upcs list<str>: list of 12-digit UPC numbers
+    :param items dict: dict of upc:{name: {}} items
     :param client_name str: name of client
     '''
     upc_lookup_data_file_path = os.path.join(PRODUCT_IMAGES_BASE_DIR, UPC_LOOKUP_DATA_FILENAME)
-    product_images_dir = os.path.join(PRODUCT_IMAGES_BASE_DIR, client_name.upper())
+    product_images_dir = os.path.join(PRODUCT_IMAGES_BASE_DIR, client_name)
 
     filenames_in_images_dir = set()
     [filenames_in_images_dir.add( os.path.splitext(f)[0] ) for f in os.listdir(product_images_dir)]
@@ -183,9 +183,9 @@ def lookup_upc_data(full_upcs: list, client_name: str):
     with open(upc_lookup_data_file_path, 'r', encoding='utf8') as fd:
         upc_lookup_data = json.load(fd)
 
-    upcs_not_existing = [f for f in full_upcs if f not in filenames_in_images_dir and f not in upc_lookup_data]
-    n = 2
-    pairs_list = [upcs_not_existing[i:i+n] for i in range(0, len(upcs_not_existing), n)]
+    upcs_not_existing = [f for f in items if f not in filenames_in_images_dir and f not in upc_lookup_data]
+    split_size = 2
+    pairs_list = [upcs_not_existing[i:i + split_size] for i in range(0, len(upcs_not_existing), split_size)]
 
     for upc_pair in pairs_list:
         upc_lookup_str = ','.join(upc_pair)
@@ -206,23 +206,6 @@ def lookup_upc_data(full_upcs: list, client_name: str):
         else:
             logger.info(f'Resp not OK for UPC pair {upc_pair}. Resp: {resp.text}')
             break
-            # time.sleep(0.5)
-
-
-    # for full_upc in full_upcs:
-    #     if full_upc not in upc_lookup_data and full_upc not in filenames_in_images_dir:
-    #         resp = requests.get( ITEM_INFO_GET_URL.format(upc_number=full_upc) )
-    #         logger.info(f'GETting {full_upc} product info...')
-
-    #         if resp.ok:
-    #             logger.info('OK')
-    #             time.sleep(0.2)
-    #             data = resp.json()
-    #             upc_lookup_data[full_upc] = data
-    #         else:
-    #             logger.info(f'Resp not OK for UPC {full_upc}. Resp: {resp.text}')
-    #             break
-    #             # time.sleep(0.5)
 
     with open(upc_lookup_data_file_path, 'w', encoding='utf8') as fd:
         json.dump(upc_lookup_data, fd, indent=4)
@@ -236,20 +219,20 @@ def get_upc_data(upc: str, items: list) -> dict:
     return None
 
 
-def log_product_names(full_upcs: list, product_names: list, client_name: str):
+def log_product_names(items: dict, client_name: str):
     product_names_file_path = os.path.join(PRODUCT_IMAGES_BASE_DIR, PRODUCT_NAMES_DATA_FILENAME)
 
     products = {}
     with open(product_names_file_path, 'r', encoding='utf8') as fd:
         products = json.load(fd)
 
-    if client_name.upper() not in products:
-        products[client_name.upper()] = {}
+    if client_name not in products:
+        products[client_name] = {}
 
-    for i, upc in enumerate(full_upcs):
-        if upc not in products[client_name.upper()]:
-            products[client_name.upper()][upc] = {}
-            products[client_name.upper()][upc]['fs_name'] = product_names[i]
+    for upc, product_info in items.items():
+        if upc not in products[client_name]:
+            products[client_name][upc] = {}
+            products[client_name][upc]['fs_name'] = product_info['name']
 
     with open(product_names_file_path, 'w', encoding='utf8') as fd:
         json.dump(products, fd, indent=4)
@@ -296,7 +279,7 @@ def get_client_logo(client_name: str) -> object:
         return ImageReader(io.BytesIO( fd.read() ))
 
 
-def get_this_rows_text_height(test_idx: int, product_names_split_list: str) -> int:
+def get_this_rows_text_height(test_idx: int, items: dict) -> int:
     num_rows = 3
     max_nth_relative_idx = num_rows - 1
     nth_relative_idx = test_idx % num_rows
@@ -311,11 +294,39 @@ def get_this_rows_text_height(test_idx: int, product_names_split_list: str) -> i
     # print('')
 
     max_length = 1
-    for i, name_split in enumerate(product_names_split_list):
+    for i, product_info in enumerate(items.values()):
         if zeroth_idx <= i and i <= secondth_idx:
-            if len(name_split) > max_length:
-                max_length = len(name_split)
+            if len(product_info['name_split']) > max_length:
+                max_length = len(product_info['name_split'])
     return max_length * 13
+
+
+# def get_this_rows_text_height(test_idx: int, product_names_split_list: str) -> int:
+#     num_rows = 3
+#     max_nth_relative_idx = num_rows - 1
+#     nth_relative_idx = test_idx % num_rows
+
+#     zeroth_idx = test_idx - nth_relative_idx
+#     secondth_idx = test_idx + ( max_nth_relative_idx - nth_relative_idx)
+#     if nth_relative_idx == 0:
+#         secondth_idx = test_idx + max_nth_relative_idx
+
+#     # print('')
+#     # print(zeroth_idx);print(secondth_idx); print(nth_relative_idx)
+#     # print('')
+
+#     max_length = 1
+#     for i, name_split in enumerate(product_names_split_list):
+#         if zeroth_idx <= i and i <= secondth_idx:
+#             if len(name_split) > max_length:
+#                 max_length = len(name_split)
+#     return max_length * 13
+
+
+def split_product_names(items: dict):
+    max_length = 32
+    for upc, item_info in items.items():
+        item_info['name_split']: list = wrap(item_info['name'], max_length)[:3]
 
 
 def get_product_names_split_list(product_names: list) -> list:
