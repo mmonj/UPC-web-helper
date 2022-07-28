@@ -18,7 +18,7 @@ file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 ##
 
-ITEMS_JSON = 'upc_check_minted/items.json'
+ITEMS_JSON = 'upc_check/items.json'
 app_upc_check = Blueprint('app_upc_check', __name__)
 
 @app_upc_check.route('/loc')
