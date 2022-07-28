@@ -4,6 +4,7 @@
 /*padding: 40px 0;*/
 /*background: #EBF0F5;*/
 /*}*/
+
 input[type=text], input[type=number], select {
     width: 100%;
     padding: 12px 20px;
@@ -14,7 +15,7 @@ input[type=text], input[type=number], select {
     box-sizing: border-box;
 }
 
-button[type=submit] {
+.btn-main-menu {
     width: 100%;
     background-color: #0276FF;
     color: white;
@@ -25,11 +26,13 @@ button[type=submit] {
     cursor: pointer;
 }
 
-button[type=submit]:hover {
+.btn-main-menu:hover {
     background-color: #0057bd;
 }
 
-.main-div {
+.all-container {
+    max-height:1000px;
+    max-width:1000px;
     margin-left: auto;
     margin-right: auto;
     border-radius: 5px;
@@ -46,4 +49,79 @@ button[type=submit]:hover {
     /*object-fit: cover;*/
     /*width: 100%;*/
     /*min-height: 100%;*/
+}
+
+/*.close {*/
+/*  color: #aaaaaa;*/
+/*  float: right;*/
+/*  font-size: 38px;*/
+/*  font-weight: bold;*/
+/*}*/
+
+/*.close:hover,*/
+/*.close:focus {*/
+/*  color: #000;*/
+/*  text-decoration: none;*/
+/*  cursor: pointer;*/
+/*}*/
+
+.scan-info {
+    text-align: center;
+    padding: 40px 0;
+    padding-top: 20px;
+}
+
+.main-view-btn {
+    text-align: center;
+}
+
+.scan-confirmation-header {
+    color: #88B04B;
+    font-family: "Nunito Sans", "Helvetica Neue", sans-serif;
+    font-weight: 700;
+    font-size: 25px;
+    margin-bottom: 10px;
+}
+
+.btn-manual {
+    /*background-color: #0276FF;*/
+    border: none;
+    border-radius: 5px;
+    color: white;
+    /*width: 200px;*/
+    /*height: 30px;*/
+    padding: 15px 32px;
+    cursor: pointer;
+}
+
+#m-upc-saved-message {
+    color: #404F5E;
+    font-family: "Nunito Sans", "Helvetica Neue", sans-serif;
+    font-size: 20px;
+    margin: 0;
+}
+
+#btn-new-upc-manual {
+    background-color: #0276FF;
+    border: none;
+    border-radius: 40px;
+    /*width: 200px;*/
+/*     height: 50px; */
+/*     padding: 8px 15px; */
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+#btn-new-upc-manual:hover {
+    background-color: #0057bd;
+}
+
+#btn-remove-upc-manual {
+    border-radius:40px;
+    background-color:#f92f2f;
+    margin-left: 5px;
+}
+
+#btn-remove-upc-manual:hover {
+    background-color: #e03030;
 }

@@ -1,11 +1,12 @@
 <html>
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <!--<link href="https://fonts.googleapis.com/css?family=Nunito+Sans:400,400i,700,900&display=swap" rel="stylesheet">-->
+        <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
         <link href="{{url_for('static', filename='styles/upc_log_form.css')}}" rel="stylesheet">
 
-        <script type="text/javascript" src="{{url_for('static', filename='data/stores_list_for_dropdown.js')}}"></script>
         <script type="text/javascript" src="{{url_for('static', filename='js/upc_log_form.js')}}"></script>
+        <script type="text/javascript" src="{{url_for('static', filename='data/stores_list_for_dropdown.js')}}"></script>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
         <link href="{{url_for('static', filename='styles/select2.min.css')}}" rel="stylesheet">
@@ -13,57 +14,123 @@
     </head>
 
     <body onload="populate_dropdown(); make_dropdown_select2();">
-        <div class="main-div" style="max-height:1000px; max-width:1000px;">
-            <img style="max-height:500px; max-width:500px;" class="logo" id="crossmark-logo" src="{{url_for('static', filename='images/logo-1.png')}}"/>
-            <br>
-            <br>
+        <div class="all-container">
+            <div id="m1-store-picker" style="display:block">
+                <img style="max-height:500px; max-width:500px;" class="logo" id="crossmark-logo" src="{{url_for('static', filename='images/logo-1.png')}}"/>
+                <br>
+                <br>
 
-            <label>UPC number scanned</label>
-            <br>
-            <input type="number" id="upc_value" value="{{upc}}"></input>
-            <div id="upc-length-error" style="color:red;display:none">
-                <p>Error. UPC number must be 12 digits</p>
+                <label>UPC number scanned</label>
+                <br>
+                <input type="number" id="upc_value" value="{{upc}}"></input>
+                <div id="upc-length-error" style="color:red;display:none">
+                    <p>Error. UPC number must be 12 digits</p>
+                </div>
+                <br>
+                <br>
+
+                <label>Whose store?</label>
+                <select id="person-value" method="GET" action="/">
+                    {% for category, resulting_list in categorized_stores.items() %}
+                    <option value="{{category}}">{{category}}</option>
+                    {% endfor %}
+                </select>
+                <br>
+                <br>
+
+
+                <label>Select a store</label>
+                <br>
+                <select required id="store-value">
+                </select>
+                <br>
+
+                <div id="store-error-message" style="color:red;display:none">
+                    <p>Error. You must choose a store</p>
+                </div>
+                <br>
+                <br>
+
+                <div class="main-view-btn">
+                    <button type="submit" class="btn-main-menu" onclick="handle_submit()">Submit</button>
+                </div>
+                <br>
+                <br>
+                <br>
+
+                {{message}}
             </div>
-            <br>
-            <br>
 
-            <label>Whose store?</label>
-            <select id="person-value" method="GET" action="/">
-                {% for category, resulting_list in categorized_stores.items() %}
-                <option value="{{category}}">{{category}}</option>
-                {% endfor %}
-            </select>
-            <br>
-            <br>
+    <!--------------------------------------------------------------------------------------------------------------------->
 
+            <div id="m2-submission-successful" style="display:none">
+                <!--<div class="modal-content">-->
+                <!--<span class="close" onclick="toggle_modal();">&times;</span>-->
+                <!--</div>-->
 
-            <label>Select a store</label>
-            <br>
-            <select required id="store_value">
-            </select>
-            <br>
+                <div id="scan-confirmation-block" class="scan-info" style="display:block">
+                    <div class="scan-confirmation-header">
+                        <h1>Submitted Successfully</h1>
+                    </div>
+                    <p id="m-upc-saved-message"></p>
+                </div>
 
-            <div id="store-error" style="color:red;display:none">
-                <p>Error. You must choose a store</p>
+                <div class="main-view-btn">
+                    <button type="submit" class="btn-main-menu" onclick="handle_manually_add_new_upc()">Manually Add New UPC</button>
+                    <br>
+                    <button type="submit" class="btn-main-menu" onclick="submit_upc_removal()">Remove UPC</button>
+                    <br>
+                    <button type="submit" class="btn-main-menu" onclick="submit_reset_store_and_upc_remove()">Switch Store &amp; Remove UPC</button>
+                    <br>
+                </div>
+
+                    <label id="upc-removed-label" style="color:red;display:none">UPC Removed. You may now go back to scanner</label>
+                <br>
             </div>
-            <br>
-            <br>
 
+            <div id="m2-currently-submitting">
+                <div class="scan-info" style="display:none">
+                    <h1>Submitting...</h1>
+                    <br>
+                </div>
+            </div>
 
-            <button type="submit" onclick="handle_submit()">Submit</button>
-            <br>
-            <br>
-            <br>
+            <div id="m3-manual-buttons" style="display:none">
+                <img style="max-height:500px; max-width:500px;" class="logo" id="crossmark-logo" src="{{url_for('static', filename='images/logo-1.png')}}"/>
+                <br>
+                <br>
 
-            {{message}}
+                <label>Input a UPC Number</label>
+                <br>
+                <input type="number" id="input-add-upc-manual" placeholder="UPC number (12 digits)" style="font-size:16px">
+                <br>
+                <div class="main-view-btn">
+                    <button type="submit" class="btn-manual" id="btn-new-upc-manual" onclick="submit_add_manual_upc()">Submit UPC</button>
+                    <button type="submit" class="btn-manual" id="btn-remove-upc-manual" onclick="submit_remove_manual_upc()">Remove UPC</button>
+                </div>
+                <br>
+
+                <p><span id="upc-length-error-modal" style="display:none; transition:0.08s; font-size:18;">Error. UPC number must be 12 digits</span></p>
+            </div>
         </div>
+
+<!--------------------------------------------------------------------------------------------------------------------->
+        <script>
+            var PREVIOUS_STORE = null;
+        </script>
 
         {% if is_continue_previous_store %}
         <script>
-            window.location.replace('/upc_log_final?upc={{upc}}&store={{previous_store}}');
+            PREVIOUS_STORE = "{{previous_store}}";
+            // const queryString = window.location.search;
+            // const urlParams = new URLSearchParams(queryString);
+            console.log(`Previous store is "${PREVIOUS_STORE}"`);
+            submit_upc("{{upc}}", PREVIOUS_STORE);
+        </script>
+        {% else %}
+        <script>
+            console.log('is_continue_previous_store is False');
         </script>
         {% endif %}
-
-
     </body>
 </html>

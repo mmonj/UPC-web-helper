@@ -27,7 +27,6 @@ logger.addHandler(file_handler)
 
 INDEX_HTML_TEMPLATE = 'index.html'
 UPC_LOG_FORM_HTML_TEMPLATE = 'upc_log_form.html'
-UPC_LOG_FINAL_HTML_TEMPLATE = 'upc_log_final.html'
 TEST_TEMPLATE = '_test1.html'
 
 PDF_TITLE_STRF = '{client_name} order sheet - Crossmark.pdf'
@@ -89,25 +88,59 @@ class SessionTracker:
         return abs(time.time() - cls.sessions.get( ip_address, {} ).get('time_last_processed_secs', 0) ) < cls.grace_period_secs
 
 
-# @app_upc_logger.after_request
-# def after_request(response):
-#     header = response.headers
-#     header['Access-Control-Allow-Origin'] = '*'
-#     header['Access-Control-Allow-Headers'] = 'Content-Type'
-#     # Other headers can be added here if needed
-#     return response
-
-
 def mirror_to_js(obj_: dict):
     output = 'CATEGORIZED_STORES = ' + json.dumps(obj_, indent=4) + ';'
 
     with open(CATEGORIZED_STORES_JAVASCRIPT_FILE, 'w', encoding='utf8') as fd:
         fd.write(output)
 
+
+# @app_upc_logger.after_request
+# def add_header(r):
+#     """
+#     Add headers to both force latest IE rendering engine or Chrome Frame,
+#     and also to cache the rendered page for 10 minutes.
+#     """
+#     r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, public, max-age=0"
+#     r.headers["Pragma"] = "no-cache"
+#     r.headers["Expires"] = "0"
+#     return r
+
+
+# @app_upc_logger.route('/test', methods=["GET"])
+# def test():
+#     logger.info('\n')
+#     logger.info('  >> Route: test <<')
+#     SessionTracker.load_sessions()
+
+#     with open(CATEGORIZED_STORES_FILE, 'r', encoding='utf8') as fd:
+#         categorized_stores = json.load(fd)
+
+#     mirror_to_js(categorized_stores)
+
+#     upc = request.args.get('upc', '')
+#     ip_address = request.headers['X-Real-IP']
+
+#     stores = _get_stores_data()
+#     stores_list = [f for f in stores.keys() if f != 'all']
+
+#     SessionTracker.save_sessions()
+
+#     logger.info('Returning with HTML response')
+#     return render_template(
+#         TEST_TEMPLATE,
+#         upc=upc,
+#         stores=stores_list,
+#         is_continue_previous_store=SessionTracker.is_continue_previous_store(ip_address),
+#         previous_store=SessionTracker.get_previous_store(ip_address),
+#         categorized_stores=categorized_stores
+#     )
+
+
 @app_upc_logger.route("/upc_log_form")
-def route_log_form():
+def log_form_route():
     logger.info('\n')
-    logger.info('  >> Route: upc_log_form <<')
+    logger.info('  >> Route: log_form <<')
     SessionTracker.load_sessions()
 
     with open(CATEGORIZED_STORES_FILE, 'r', encoding='utf8') as fd:
@@ -115,25 +148,15 @@ def route_log_form():
 
     mirror_to_js(categorized_stores)
 
-    upc = request.args.get('upc')
+    upc = request.args.get('upc', '')
     ip_address = request.headers['X-Real-IP']
 
-    # logger.info(ip_address)
-    # logger.info(f'is continue prev store: {SessionTracker.is_continue_previous_store(ip_address)}')
-    # logger.info(f'reset-store-arg: {request.args.get("reset-store", default=False, type=bool)}')
-    # logger.info(SessionTracker.sessions)
-
-    if request.args.get("reset-store", default=False, type=bool):
-        SessionTracker.reset_time(ip_address)
-        if request.args.get("remove-upc", default=False, type=bool):
-            store_name = request.args.get('store')
-            _remove_upc(upc, store_name)
-
-    stores = _get_stores()
+    stores = _get_stores_data()
     stores_list = [f for f in stores.keys() if f != 'all']
 
     SessionTracker.save_sessions()
 
+    logger.info('Returning with HTML response')
     return render_template(
         UPC_LOG_FORM_HTML_TEMPLATE,
         upc=upc,
@@ -144,52 +167,46 @@ def route_log_form():
     )
 
 
-@app_upc_logger.route("/upc_log_final")
-def route_log_final():
+@app_upc_logger.route("/direct_update", methods=['GET', 'POST'])
+def direct_update_route():
+    if request.method != 'POST':
+        return jsonify( {'message': 'Received no data'} ), 400
+
     logger.info('\n')
-    logger.info('  >> Route: upc_log_final <<')
+    logger.info('  >> Route: direct_update <<')
+
     SessionTracker.load_sessions()
+    content = request.json
+    logger.info(content)
+    ret_data = {'message': 'Internal server did not complete intended action'}
+    ret_code = 400
 
-    upc = request.args.get('upc')
-    store = request.args.get('store')
+    # if len(content['upc']) != 12:
+    #     logger.info(f'Length of "{content["upc"]}" is {len(content["upc"])}, instead of the required 12')
+    #     return jsonify( {'message': f'Length of "{content["upc"]}" is {len(content["upc"])}, instead of the required 12'} ), 400
+
     ip_address = request.headers['X-Real-IP']
+    SessionTracker.update_store(content['store'], ip_address)
+    if content.get('store_reset') is not None:
+        SessionTracker.reset_time(ip_address)
 
-    SessionTracker.update_store(store, ip_address)
-    _add_upc(upc, store)
+    if content['action'] == 'remove':
+        _remove_upc(content['upc'], content['store'])
+        ret_data['message'] = f'Removed UPC {content["upc"]}'
+        ret_code = 200
+    elif content['action'] == 'add':
+        _add_upc(content['upc'], content['store'])
+        ret_data['message'] = f'Added UPC {content["upc"]}'
+        ret_code = 200
 
     SessionTracker.save_sessions()
-
-    return render_template(UPC_LOG_FINAL_HTML_TEMPLATE, upc=upc, store=store)
-
-
-@app_upc_logger.route("/direct_update", methods=['GET', 'POST'])
-def route_direct_update():
-    if request.method == 'POST':
-        content = request.json
-        logger.info('\n')
-        logger.info('  >> Route: direct_update <<')
-        logger.info(content)
-
-        # if len(content['upc']) != 12:
-        #     logger.info(f'Length of "{content["upc"]}" is {len(content["upc"])}, instead of the required 12')
-        #     return jsonify( {'Success': False, 'message': f'Length of "{content["upc"]}" is {len(content["upc"])}, instead of the required 12'} ), 400
-
-        if content['action'] == 'remove':
-            _remove_upc(content['upc'], content['store'])
-            return jsonify( {'Success': True, 'message': f'Removed UPC {content["upc"]}'} ), 200
-        elif content['action'] == 'add':
-            _add_upc(content['upc'], content['store'])
-            return jsonify( {'Success': True, 'message': f'Added UPC {content["upc"]}'} ), 200
-
-        jsonify( {'Success': False, 'message': 'Internal server did not complete intended action'} ), 400
-    else:
-        return jsonify( {'Success': False, 'message': 'Received no data'} ), 400
+    return jsonify( ret_data ), ret_code
 
 
 @app_upc_logger.route("/barcode_getter", methods=["POST", "OPTIONS"])
-def route_barcode_getter():
+def get_barcodes_pdf_route():
     logger.info('\n')
-    logger.info('  >> Route: barcode_getter <<')
+    logger.info('  >> Route: get_barcodes_pdf <<')
 
     if request.method == "OPTIONS": # CORS preflight
         logger.info('Building preflight response')
@@ -238,6 +255,31 @@ def route_barcode_getter():
     return resp
 
 
+@app_upc_logger.route("/stores_data.json", methods=["GET", "OPTIONS"])
+def get_stores_data_route():
+    def _corsify_this(response):
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add('Content-Type', 'application/json')
+        response.headers.add("Cache-Control", "no-cache, no-store, must-revalidate, public, max-age=0")
+        response.headers.add("Pragma", "no-cache")
+        response.headers.add("Expires", "0")
+        return response
+
+    logger.info('\n')
+    logger.info('  >> Route: stores_data_getter <<')
+
+    if request.method == "OPTIONS": # CORS preflight
+        logger.info('Building preflight response')
+        return _build_cors_preflight_response()
+    elif request.method != 'GET':
+        logger.info('Request method is not GET')
+        return _corsify_actual_response( jsonify( {'message': 'Invalid request'} ) ), 400
+
+    logger.info('Returning with stores_data')
+    stores_data: dict = _get_stores_data()
+    return _corsify_this( jsonify(stores_data) )
+
+
 def _build_cors_preflight_response():
     response = make_response()
 
@@ -251,36 +293,10 @@ def _build_cors_preflight_response():
 
     return response
 
+
 def _corsify_actual_response(response):
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response
-
-
-@app_upc_logger.route('/test', methods=["POST", "OPTIONS"])
-def test():
-    logger.info('\n')
-    logger.info('  >> Route: test <<')
-    allowed_authorization_key = 'hello there'
-
-    if request.method == "OPTIONS": # CORS preflight
-        logger.info('Building preflight response')
-        return _build_cors_preflight_response()
-    elif request.method == "POST": # The actual request following the preflight
-        received_auth_key = request.headers.get("Authorization")
-        if received_auth_key is None or received_auth_key != allowed_authorization_key:
-            return _corsify_actual_response( jsonify( {'message': 'invalid auth key'} ) ), 401
-
-        filename = 'out_pdf_file.pdf'
-        pdf_path = 'upc_logger/test_pdf.pdf'
-
-        resp = send_file(pdf_path, as_attachment=True, cache_timeout=0)
-        resp.headers.add('Access-Control-Allow-Origin', '*')
-        resp.headers.add("Access-Control-Expose-Headers", 'filename')
-        resp.headers.add("Access-Control-Expose-Headers", 'Content-Disposition')
-        resp.headers.add("filename", filename)
-        resp.headers.add('mimetype', 'application/pdf')
-
-        return resp
 
 
 def get_full_upcs(trunc_upcs: list, client_name: str) -> list:
@@ -335,8 +351,8 @@ def slugify(value, allow_unicode=False):
 
 def _remove_upc(upc: str, store_name):
     logger.info('\n')
-    logger.info('>> remove_upc func <<')
-    stores = _get_stores()
+    logger.info('>> remove_upc <<')
+    stores = _get_stores_data()
 
     popped_item = stores[store_name].pop(upc, None)
     logger.info(f'Popped from dict: key {repr(upc)} == {popped_item}')
@@ -344,7 +360,7 @@ def _remove_upc(upc: str, store_name):
     _update_stores(stores)
 
 
-def _get_stores() -> dict:
+def _get_stores_data() -> dict:
     with open(STORE_INFO_FILE, 'r', encoding='utf8') as fd:
         return json.load(fd)
 
@@ -353,12 +369,17 @@ def _add_upc(upc: str, store_name: str) -> dict:
     '''
     updates data with upc and store_name passed in
     '''
+    logger.info('\n')
+    logger.info('>> add_upc <<')
+
+    stores_data: dict = _get_stores_data()
     ts = time.time() - (4 * 3600)
     now: str = datetime.datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d at %I:%M:%S %p')
-    stores_data: dict = _get_stores()
 
     if store_name not in stores_data:
         stores_data[store_name] = {}
+
+    logger.info(f'Adding {upc} to dict')
     stores_data[store_name][upc] = {
         'instock': True,
         'time_scanned': now
