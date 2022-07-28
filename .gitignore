@@ -8,6 +8,7 @@ static/images/**
 venv/**
 templates/_test*
 upc_logger/generated_pdfs/**
+_test*
 *.json
 *.lnk
 *.log
