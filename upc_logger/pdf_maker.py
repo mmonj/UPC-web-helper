@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import requests
+import time
 from PIL import Image, ImageOps, ImageChops
 from textwrap import wrap
 from reportlab.pdfgen import canvas
@@ -30,9 +31,47 @@ PRODUCT_IMAGES_BASE_DIR = 'upc_logger/data - product images'
 
 UPC_LOOKUP_DATA_FILENAME = '_upc_lookup_data.json'
 PRODUCT_NAMES_DATA_FILENAME = 'product_names.json'
+IMG_NOT_AVAILABLE_IMG_NAME = '_image_not_available.jpg'
+NEW_ICON_IMG_NAME = '_new_icon.png'
+CYCLE_START_TIME_INFO_NAME = 'last_cycle_half_start_time_epoch.json'
 
-ITEM_INFO_GET_URL = 'https://api.upcitemdb.com/prod/trial/lookup?upc={upc_number}'
-IMAGE_URL_PREFERENCES = ['target.com', 'target.scene', 'quill.com', 'walmartimages.com', 'unbeatablesale.com', 'officedepot.com', 'neweggimages.com', 'newegg.com']
+TWO_WEEKS_IN_SECONDS = 14 * 24 * 3600
+
+ITEM_INFO_GET_URL_TEMPLATE = 'https://api.upcitemdb.com/prod/trial/lookup?upc={upc_number}'
+IMAGE_URL_PREFERENCES = ['target.com', 'target.scene', 'walmartimages.com', 'quill.com', 'unbeatablesale.com', 'officedepot.com', 'neweggimages.com', 'newegg.com']
+
+
+def is_upc_new(upc_data: dict, this_cycle_half_start_time: int) -> bool:
+    time_added = upc_data['time_added']
+    next_cycle_half_start_time = this_cycle_half_start_time + TWO_WEEKS_IN_SECONDS
+
+    return this_cycle_half_start_time < time_added and time_added < next_cycle_half_start_time
+
+
+def update_cycle_info():
+    file_path = os.path.join(PRODUCT_IMAGES_BASE_DIR, CYCLE_START_TIME_INFO_NAME)
+    with open(file_path, 'r', encoding='utf8') as fd:
+        data = json.load(fd)
+
+    this_cycle_half_start_time = data['this_cycle_half_start_time']
+    next_cycle_half_start_time = this_cycle_half_start_time + TWO_WEEKS_IN_SECONDS
+
+    while next_cycle_half_start_time < time.time():
+        next_cycle_half_start_time += TWO_WEEKS_IN_SECONDS
+
+    this_cycle_half_start_time = next_cycle_half_start_time - TWO_WEEKS_IN_SECONDS
+    data['this_cycle_half_start_time'] = this_cycle_half_start_time
+
+    with open(file_path, 'w', encoding='utf8') as fd:
+        json.dump(data, fd, indent=4)
+
+    return this_cycle_half_start_time
+
+
+def get_new_item_image() -> object:
+    file_path = os.path.join( PRODUCT_IMAGES_BASE_DIR, NEW_ICON_IMG_NAME )
+    with open(file_path, 'rb') as fd:
+        return ImageReader(io.BytesIO( fd.read() ))
 
 
 def create_pdf_with_upcs(items: dict, pdf_path: str, client_name: str):
@@ -62,9 +101,16 @@ def create_pdf_with_upcs(items: dict, pdf_path: str, client_name: str):
     client_logo = get_client_logo(client_name)
     pdf_canvas.drawImage(client_logo, 156, 770, width=10*cm, height=2.1*cm, preserveAspectRatio=True, anchor='c', mask='auto')
 
+    this_cycle_half_start_time = update_cycle_info()
+    new_item_image: object = get_new_item_image()
+
     for i, upc in enumerate(items.keys()):
         # text_height = get_this_rows_text_height(i, product_names_split_list)
         text_height = get_this_rows_text_height(i, items)
+
+        if is_upc_new(items[upc], this_cycle_half_start_time):
+            pdf_canvas.drawImage(new_item_image, curr_x + 39, curr_y + 2.5*cm, width=max_image_width - 2.9*cm, height=max_image_height, preserveAspectRatio=True, anchor='sw', mask='auto')
+            logger.info(f'      > > > > > "{upc}" is new')
 
         product_image = get_product_image_bytes(upc, client_name)
         if product_image is None:
@@ -189,7 +235,7 @@ def lookup_upc_data(items: dict, client_name: str):
 
     for upc_pair in pairs_list:
         upc_lookup_str = ','.join(upc_pair)
-        resp = requests.get( ITEM_INFO_GET_URL.format(upc_number=upc_lookup_str) )
+        resp = requests.get( ITEM_INFO_GET_URL_TEMPLATE.format(upc_number=upc_lookup_str) )
         logger.info(f'GETting UPC pair {upc_pair} product info...')
 
         if resp.ok:
@@ -268,7 +314,7 @@ def resize_and_trim_image(img: object) -> object:
 
 
 def get_image_not_available_image() -> object:
-    image_not_available_path = os.path.join(PRODUCT_IMAGES_BASE_DIR, '_image_not_available.jpg')
+    image_not_available_path = os.path.join(PRODUCT_IMAGES_BASE_DIR, IMG_NOT_AVAILABLE_IMG_NAME)
     with open(image_not_available_path, 'rb') as fd:
         return ImageReader(io.BytesIO( fd.read() ))
 
