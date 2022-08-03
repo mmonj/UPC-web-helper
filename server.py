@@ -1,6 +1,6 @@
 from flask import Flask
 
-from upc_check_minted import upc_check
+from upc_check import upc_check
 from upc_logger import upc_logger
 
 app = Flask(__name__)
