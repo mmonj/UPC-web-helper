@@ -59,7 +59,6 @@ function handle_submit() {
     }
 
     submit_upc(upc, store_name);
-    // xhr submit code here
 }
 
 function submit_upc(upc, store_name) {
