@@ -345,18 +345,6 @@ def _corsify_actual_response(response):
     return response
 
 
-def get_full_upcs(trunc_upcs: list, client_name: str) -> list:
-    ret = []
-    start_digit = '0' if client_name != 'yasso' else '8'
-
-    for trunc_upc in trunc_upcs:
-        full_upc = start_digit + trunc_upc
-        full_upc = full_upc + gs1.calculate(full_upc)
-        ret.append(full_upc)
-
-    return ret
-
-
 def empty_dir(target_dir: str):
     for f in os.listdir(target_dir):
         file_path = os.path.join(target_dir, f)
@@ -375,7 +363,6 @@ def get_filename(client_name: str, store_name: str, item_count: int, filename_te
         date=now,
         store_name=store_name
     )
-    # return f'{client_name.upper()} OOS order sheet - {now} - {store_name}.pdf'
 
 
 def slugify(value, allow_unicode=False):
@@ -403,7 +390,7 @@ def _remove_upc(upc: str, store_name):
     popped_item = stores[store_name].pop(upc, None)
     logger.info(f'Popped from dict: key {repr(upc)} == {popped_item}')
 
-    _update_stores(stores)
+    _update_stores_data(stores)
 
 
 def _add_upc_from_scan(upc: str, store_name: str) -> dict:
@@ -429,7 +416,7 @@ def _add_upc_from_scan(upc: str, store_name: str) -> dict:
     stores_data[store_name][upc]['time_scanned'] = now
 
     logger.info(f'Added to dict: key {repr(upc)}, store: {store_name}')
-    _update_stores(stores_data)
+    _update_stores_data(stores_data)
 
 
 def _add_items_in_bulk(upcs: list, store_name: str):
@@ -452,14 +439,14 @@ def _add_items_in_bulk(upcs: list, store_name: str):
             # stores_data[store_name][upc]['time_added'] = time.time()
 
     if is_update_occurred:
-        _update_stores(stores_data)
+        _update_stores_data(stores_data)
     else:
         logger.info('Added 0 items to stores data JSON')
 
     return stores_data[store_name]
 
 
-def _update_stores(stores: dict):
+def _update_stores_data(stores: dict):
     with open(STORE_INFO_FILE, 'w', encoding='utf8') as fd:
         json.dump(stores, fd, indent=4)
 
@@ -473,13 +460,3 @@ def _get_stores_data() -> dict:
     with open(STORE_INFO_FILE, 'r', encoding='utf8') as fd:
         return json.load(fd)
 
-
-def _assert_settings(request: object) -> object:
-    font_size = 18
-
-    if not os.path.isfile(STORE_INFO_FILE):
-        return render_template(INDEX_HTML_TEMPLATE, font_size=font_size, message='Error. No JSON file found.')
-
-    upc = request.args.get('upc', default=None, type=str)
-    if upc is None or upc == '':
-        return render_template(INDEX_HTML_TEMPLATE, font_size=font_size, message='Error. No UPC scanned.')
