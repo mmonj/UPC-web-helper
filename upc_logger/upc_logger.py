@@ -36,6 +36,8 @@ STORE_INFO_JS_FILE = './static/data/store_info.js'
 CATEGORIZED_STORES_FILE = './static/data/stores_list_for_dropdown.json'
 CATEGORIZED_STORES_JAVASCRIPT_FILE = './static/data/stores_list_for_dropdown.js'
 
+UNIQUE_UPCS_FILE_PATH = './upc_logger/data - product images/unique_upcs.json'
+
 app_upc_logger = Blueprint('app_upc_logger', __name__)
 
 
@@ -195,7 +197,7 @@ def direct_update_route():
         ret_data['message'] = f'Removed UPC {content["upc"]}'
         ret_code = 200
     elif content['action'] == 'add':
-        _add_upc(content['upc'], content['store'])
+        _add_upc_from_scan(content['upc'], content['store'])
         ret_data['message'] = f'Added UPC {content["upc"]}'
         ret_code = 200
 
@@ -221,20 +223,24 @@ def get_barcodes_pdf_route():
 
     request_types_to_templates = {
         'all': '{client_name} item sheet - {item_count} items.pdf',
-        'oos': '{client_name} order sheet - {date} - {store_name}.pdf',
-        'instock': '{client_name} in-stock sheet - {date} - {store_name}.pdf'
+        'out_of_dist': '{client_name} order sheet - {date} - {store_name}.pdf',
+        'in_dist': '{client_name} in-stock sheet - {date} - {store_name}.pdf'
     }
 
     client_name = request.json['client_name']
     store_name = request.json['store_name']
+    shortened_store_name = request.json['shortened_store_name']
     items = request.json['items']
-    # product_names = list(request.json['items'].values())
-    # full_upcs = list(request.json['items'].keys() )
+
+    add_upcs_to_uniques_file(items)
+    logger.info('Adding UPCs in bulk to json')
+    store_data = _add_items_in_bulk(items.keys(), store_name)
+    include_upc_time_added(items, store_data)
 
     logger.info(f'> Received {len(items)} {client_name} items')
 
     filename_template = request_types_to_templates[request.json['barcode_request_type']]
-    filename = get_filename(client_name, store_name, len(items), filename_template)
+    filename = get_filename(client_name, shortened_store_name, len(items), filename_template)
     pdf_path = os.path.join('upc_logger/generated_pdfs', filename)
 
     logger.info('> Looking up UPC data')
@@ -253,6 +259,46 @@ def get_barcodes_pdf_route():
     resp.headers.add('mimetype', 'application/pdf')
 
     return resp
+
+
+@app_upc_logger.route("/add_items_in_bulk", methods=["POST", "OPTIONS"])
+def add_items_in_bulk_route():
+    logger.info('\n')
+    logger.info('  >> Route: add_items_in_bulk <<')
+
+    if request.method == "OPTIONS": # CORS preflight
+        logger.info('Building preflight response')
+        return _build_cors_preflight_response()
+    elif request.method != 'POST':
+        return _corsify_actual_response( jsonify( {'message': 'Invalid request'} ) ), 400
+
+    store_name = request.json['store_name']
+    upcs = request.json['upcs']
+
+    logger.info('Adding UPCs in bulk to json')
+    _add_items_in_bulk(upcs, store_name)
+
+    logger.info('Returning with success JSON msg')
+    return _corsify_actual_response( jsonify( {"message": f"Success. Received store '{store_name}' and {len(upcs)} UPCs"} ) )
+
+
+def add_upcs_to_uniques_file(items: dict):
+    with open(UNIQUE_UPCS_FILE_PATH, 'r', encoding='utf8') as fd:
+        unique_upcs = json.load(fd)
+
+    for upc in items:
+        if upc not in unique_upcs:
+            unique_upcs[upc] = {'time_added': time.time()}
+
+    with open(UNIQUE_UPCS_FILE_PATH, 'w', encoding='utf8') as fd:
+        json.dump(unique_upcs, fd, indent=4)
+
+    return unique_upcs
+
+
+def include_upc_time_added(items: dict, store_data: dict):
+    for upc, data in items.items():
+            data['time_added'] = store_data[upc].get('time_added', 0)
 
 
 @app_upc_logger.route("/stores_data.json", methods=["GET", "OPTIONS"])
@@ -360,12 +406,7 @@ def _remove_upc(upc: str, store_name):
     _update_stores(stores)
 
 
-def _get_stores_data() -> dict:
-    with open(STORE_INFO_FILE, 'r', encoding='utf8') as fd:
-        return json.load(fd)
-
-
-def _add_upc(upc: str, store_name: str) -> dict:
+def _add_upc_from_scan(upc: str, store_name: str) -> dict:
     '''
     updates data with upc and store_name passed in
     '''
@@ -376,17 +417,46 @@ def _add_upc(upc: str, store_name: str) -> dict:
     ts = time.time() - (4 * 3600)
     now: str = datetime.datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d at %I:%M:%S %p')
 
+    logger.info(f'Adding {upc} to dict')
     if store_name not in stores_data:
         stores_data[store_name] = {}
 
-    logger.info(f'Adding {upc} to dict')
-    stores_data[store_name][upc] = {
-        'instock': True,
-        'time_scanned': now
-    }
+    if upc not in stores_data[store_name]:
+        stores_data[store_name][upc] = {}
+        stores_data[store_name][upc]['time_added'] = time.time()
+
+    stores_data[store_name][upc]['instock'] = True
+    stores_data[store_name][upc]['time_scanned'] = now
 
     logger.info(f'Added to dict: key {repr(upc)}, store: {store_name}')
     _update_stores(stores_data)
+
+
+def _add_items_in_bulk(upcs: list, store_name: str):
+    logger.info('\n')
+    logger.info('  >> _add_items_in_bulk() <<')
+
+    stores_data = _get_stores_data()
+
+    if stores_data.get(store_name) is None:
+        stores_data[store_name] = {}
+
+    is_update_occurred = False
+    for upc in upcs:
+        if upc not in stores_data[store_name]:
+            logger.info(f'Adding "{upc}" to stores data JSON')
+            is_update_occurred = True
+
+            stores_data[store_name][upc] = {}
+            stores_data[store_name][upc]['instock'] = False
+            # stores_data[store_name][upc]['time_added'] = time.time()
+
+    if is_update_occurred:
+        _update_stores(stores_data)
+    else:
+        logger.info('Added 0 items to stores data JSON')
+
+    return stores_data[store_name]
 
 
 def _update_stores(stores: dict):
@@ -397,6 +467,11 @@ def _update_stores(stores: dict):
     data_str = 'var STORES = ' + data_str + ';'
     with open(STORE_INFO_JS_FILE, 'w', encoding='utf8') as fd:
         fd.write(data_str)
+
+
+def _get_stores_data() -> dict:
+    with open(STORE_INFO_FILE, 'r', encoding='utf8') as fd:
+        return json.load(fd)
 
 
 def _assert_settings(request: object) -> object:
