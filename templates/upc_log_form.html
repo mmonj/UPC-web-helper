@@ -6,14 +6,17 @@
         <link href="{{url_for('static', filename='styles/upc_log_form.css')}}" rel="stylesheet">
 
         <script type="text/javascript" src="{{url_for('static', filename='js/upc_log_form.js')}}"></script>
-        <script type="text/javascript" src="{{url_for('static', filename='data/stores_list_for_dropdown.js')}}"></script>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
         <link href="{{url_for('static', filename='styles/select2.min.css')}}" rel="stylesheet">
         <script type="text/javascript" src="{{url_for('static', filename='js/select2.min.js')}}"></script>
+
+        <script>
+            var CATEGORIZED_STORES = JSON.parse('{{ categorized_stores | tojson | safe}}');
+        </script>
     </head>
 
-    <body onload="populate_dropdown(); make_dropdown_select2();">
+    <body onload="populate_store_options(); make_dropdown_select2();">
         <div class="all-container">
             <div id="m1-store-picker" style="display:block">
                 <img style="max-height:500px; max-width:500px;" class="logo" id="crossmark-logo" src="{{url_for('static', filename='images/logo-1.png')}}"/>
@@ -30,7 +33,7 @@
                 <br>
 
                 <label>Whose store?</label>
-                <select id="person-value" method="GET" action="/">
+                <select id="person-dropdown" method="GET" action="/">
                     {% for category, resulting_list in categorized_stores.items() %}
                     <option value="{{category}}">{{category}}</option>
                     {% endfor %}
@@ -41,7 +44,7 @@
 
                 <label>Select a store</label>
                 <br>
-                <select required id="store-value">
+                <select required id="store-dropdown">
                 </select>
                 <br>
 
