@@ -5,7 +5,6 @@ import os
 import re
 import time
 import unicodedata
-from checkdigit import gs1
 from flask import Blueprint, render_template, request, send_file, jsonify, make_response
 
 import upc_logger.pdf_maker as pdf_maker
@@ -130,6 +129,9 @@ class SessionTracker:
 
 @app_upc_logger.route("/upc_log_form")
 def log_form_route():
+    '''
+    returns HTML template to receive a UPC from a scan and allow the user to pick their desired store for which to log the UPC
+    '''
     logger.info('\n')
     logger.info('  >> Route: log_form <<')
     SessionTracker.load_sessions()
@@ -156,8 +158,12 @@ def log_form_route():
     )
 
 
-@app_upc_logger.route("/direct_update", methods=['GET', 'POST'])
+@app_upc_logger.route("/direct_update", methods=['POST'])
 def direct_update_route():
+    '''
+    A POST endpoint which to send UPC data, in order to store the received UPC and associated information to database
+    and mark the UPC in database as being carried by the store as indicated in the received JSON object
+    '''
     if request.method != 'POST':
         return jsonify( {'message': 'Received no data'} ), 400
 
@@ -194,6 +200,10 @@ def direct_update_route():
 
 @app_upc_logger.route("/barcode_getter", methods=["POST", "OPTIONS"])
 def get_barcodes_pdf_route():
+    '''
+    A POST endpoint that receives a JSON object of UPC numbers and associated information;
+    returns a PDF document as an attachment to download client-side containing product details, barcodes and product images
+    '''
     logger.info('\n')
     logger.info('  >> Route: get_barcodes_pdf <<')
 
@@ -219,7 +229,7 @@ def get_barcodes_pdf_route():
     shortened_store_name = request.json['shortened_store_name']
     items = request.json['items']
 
-    add_upcs_to_uniques_file(items)
+    add_upcs_to_uniques_file(items.keys())
     logger.info('Adding UPCs in bulk to json')
     store_data = _add_items_in_bulk(items.keys(), store_name)
     include_upc_time_added(items, store_data)
@@ -250,6 +260,10 @@ def get_barcodes_pdf_route():
 
 @app_upc_logger.route("/add_items_in_bulk", methods=["POST", "OPTIONS"])
 def add_items_in_bulk_route():
+    '''
+    A POST endpoint which receives a JSON object containing UPC numbers
+    for the purpose of storing all UPCs to database
+    '''
     logger.info('\n')
     logger.info('  >> Route: add_items_in_bulk <<')
 
@@ -287,7 +301,11 @@ def add_items_in_bulk_route():
     return _corsify_actual_response( jsonify( ret_json ) )
 
 
-def add_upcs_to_uniques_file(items: dict):
+def add_upcs_to_uniques_file(items: list):
+    '''
+    :param items list<str>: A list of UPC numbers in order to store to database containing a unique list of UPC numbers
+    :return dict: A dict of {upc: {}} data containing associated information about the UPC number, namely a 'time_added' attribute, stored as a UNIX timestamp
+    '''
     with open(UNIQUE_UPCS_FILE_PATH, 'r', encoding='utf8') as fd:
         unique_upcs = json.load(fd)
 
@@ -302,6 +320,12 @@ def add_upcs_to_uniques_file(items: dict):
 
 
 def include_upc_time_added(items: dict, store_data: dict):
+    '''
+    :param items dict: A dict of {upc: {}} data received from client-side containing UPC numbers as keys, and their associated data, which
+    includes product name
+    :param store_data dict: A dict of {upc: {}} data obtained from database that contains UPC numbers as keys, and
+    their associated data, which includes a 'instock' bool attribute, 'time_added' UNIX timestamp, and 'time_scanned' string as a human-readable timestamp, localized to EST timezone
+    '''
     for upc, data in items.items():
             data['time_added'] = store_data[upc].get('time_added', 0)
 
@@ -350,14 +374,15 @@ def _corsify_actual_response(response):
     return response
 
 
-def empty_dir(target_dir: str):
-    for f in os.listdir(target_dir):
-        file_path = os.path.join(target_dir, f)
-        if os.path.isfile(file_path):
-            os.unlink(file_path)
-
-
 def get_filename(client_name: str, store_name: str, item_count: int, filename_template: str) -> str:
+    '''
+    Intended to generated a relevant filename in order to return to client-side a PDF attachment of barcodes and other product information
+    :param client_name str: Name of brand/account in full uppercase
+    :param store_name str: Name of store
+    :param item_count int: Number of items (UPCs) received from client-side
+    :param filename_template str: a string template to subtitute in the relevant attributes
+
+    '''
     ts = time.time() - (4 * 3600)
     now = datetime.datetime.utcfromtimestamp(ts).strftime('%a, %b %-d, %Y')
     store_name = slugify(store_name)
@@ -388,12 +413,17 @@ def slugify(value, allow_unicode=False):
 
 
 def _remove_upc(upc: str, store_name):
+    '''
+    Changes the 'instock' attribute for a particular store in database
+    :param upc str: UPC number
+    :param store_name str: Name of store from which to change the 'instock' attribute for the UPC indicated
+    '''
     logger.info('\n')
     logger.info('>> remove_upc <<')
     stores = _get_stores_data()
 
-    popped_item = stores[store_name].pop(upc, None)
-    logger.info(f'Popped from dict: key {repr(upc)} == {popped_item}')
+    stores[store_name][upc]['instock'] = False
+    logger.info(f'Changed "instock" attribute for UPC "{upc}" at store "{store_name}"')
 
     _update_stores_data(stores)
 
