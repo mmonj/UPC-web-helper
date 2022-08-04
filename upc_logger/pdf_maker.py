@@ -41,10 +41,8 @@ ITEM_INFO_GET_URL_TEMPLATE = 'https://api.upcitemdb.com/prod/trial/lookup?upc={u
 IMAGE_URL_PREFERENCES = ['target.com', 'target.scene', 'walmartimages.com', 'quill.com', 'unbeatablesale.com', 'officedepot.com', 'neweggimages.com', 'newegg.com']
 
 
-def is_upc_new(upc_data: dict, this_cycle_half_start_time: int) -> bool:
-    time_added = upc_data['time_added']
-    next_cycle_half_start_time = this_cycle_half_start_time + TWO_WEEKS_IN_SECONDS
-
+def is_upc_new(upc_data: dict, this_cycle_half_start_time: int, next_cycle_half_start_time: int) -> bool:
+    time_added = upc_data.get('time_added', 0)
     return this_cycle_half_start_time < time_added and time_added < next_cycle_half_start_time
 
 
@@ -65,7 +63,7 @@ def update_cycle_info():
     with open(file_path, 'w', encoding='utf8') as fd:
         json.dump(data, fd, indent=4)
 
-    return this_cycle_half_start_time
+    return this_cycle_half_start_time, this_cycle_half_start_time + TWO_WEEKS_IN_SECONDS
 
 
 def get_new_item_image() -> object:
@@ -101,14 +99,14 @@ def create_pdf_with_upcs(items: dict, pdf_path: str, client_name: str):
     client_logo = get_client_logo(client_name)
     pdf_canvas.drawImage(client_logo, 156, 770, width=10*cm, height=2.1*cm, preserveAspectRatio=True, anchor='c', mask='auto')
 
-    this_cycle_half_start_time = update_cycle_info()
+    this_cycle_half_start_time, next_cycle_half_start_time = update_cycle_info()
     new_item_image: object = get_new_item_image()
 
     for i, upc in enumerate(items.keys()):
         # text_height = get_this_rows_text_height(i, product_names_split_list)
         text_height = get_this_rows_text_height(i, items)
 
-        if is_upc_new(items[upc], this_cycle_half_start_time):
+        if is_upc_new(items[upc], this_cycle_half_start_time, next_cycle_half_start_time):
             pdf_canvas.drawImage(new_item_image, curr_x + 39, curr_y + 2.5*cm, width=max_image_width - 2.9*cm, height=max_image_height, preserveAspectRatio=True, anchor='sw', mask='auto')
             logger.info(f'      > > > > > "{upc}" is new')
 
