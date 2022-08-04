@@ -31,10 +31,8 @@ TEST_TEMPLATE = '_test1.html'
 
 PDF_TITLE_STRF = '{client_name} order sheet - Crossmark.pdf'
 
-STORE_INFO_FILE = './static/data/store_info.json'
-STORE_INFO_JS_FILE = './static/data/store_info.js'
+STORES_DATA_FILE_PATH = './static/data/store_info.json'
 CATEGORIZED_STORES_FILE = './static/data/stores_list_for_dropdown.json'
-CATEGORIZED_STORES_JAVASCRIPT_FILE = './static/data/stores_list_for_dropdown.js'
 
 UNIQUE_UPCS_FILE_PATH = './upc_logger/data - product images/unique_upcs.json'
 
@@ -90,13 +88,6 @@ class SessionTracker:
         return abs(time.time() - cls.sessions.get( ip_address, {} ).get('time_last_processed_secs', 0) ) < cls.grace_period_secs
 
 
-def mirror_to_js(obj_: dict):
-    output = 'CATEGORIZED_STORES = ' + json.dumps(obj_, indent=4) + ';'
-
-    with open(CATEGORIZED_STORES_JAVASCRIPT_FILE, 'w', encoding='utf8') as fd:
-        fd.write(output)
-
-
 # @app_upc_logger.after_request
 # def add_header(r):
 #     """
@@ -117,8 +108,6 @@ def mirror_to_js(obj_: dict):
 
 #     with open(CATEGORIZED_STORES_FILE, 'r', encoding='utf8') as fd:
 #         categorized_stores = json.load(fd)
-
-#     mirror_to_js(categorized_stores)
 
 #     upc = request.args.get('upc', '')
 #     ip_address = request.headers['X-Real-IP']
@@ -147,8 +136,6 @@ def log_form_route():
 
     with open(CATEGORIZED_STORES_FILE, 'r', encoding='utf8') as fd:
         categorized_stores = json.load(fd)
-
-    mirror_to_js(categorized_stores)
 
     upc = request.args.get('upc', '')
     ip_address = request.headers['X-Real-IP']
@@ -273,13 +260,31 @@ def add_items_in_bulk_route():
         return _corsify_actual_response( jsonify( {'message': 'Invalid request'} ) ), 400
 
     store_name = request.json['store_name']
+    client_name = request.json['client_name']
     upcs = request.json['upcs']
 
+    logger.info(f'Processing {len(upcs)} {client_name} UPCs for store "{store_name}"')
+    this_cycle_half_start_time, next_cycle_half_start_time = pdf_maker.update_cycle_info()
+
     logger.info('Adding UPCs in bulk to json')
-    _add_items_in_bulk(upcs, store_name)
+    store_data = _add_items_in_bulk(upcs, store_name)
+
+    new_upcs = []
+    for upc, upc_data in store_data.items():
+        time_added = upc_data.get('time_added', 0)
+        if this_cycle_half_start_time < time_added and time_added < next_cycle_half_start_time:
+            logger.info(f'UPC "{upc}" is new; add time: {time_added}')
+            new_upcs.append(upc)
+
+    ret_json = {
+        'message': 'Success',
+        'data': {
+            'new_upcs': new_upcs
+        }
+    }
 
     logger.info('Returning with success JSON msg')
-    return _corsify_actual_response( jsonify( {"message": f"Success. Received store '{store_name}' and {len(upcs)} UPCs"} ) )
+    return _corsify_actual_response( jsonify( ret_json ) )
 
 
 def add_upcs_to_uniques_file(items: dict):
@@ -447,16 +452,11 @@ def _add_items_in_bulk(upcs: list, store_name: str):
 
 
 def _update_stores_data(stores: dict):
-    with open(STORE_INFO_FILE, 'w', encoding='utf8') as fd:
+    with open(STORES_DATA_FILE_PATH, 'w', encoding='utf8') as fd:
         json.dump(stores, fd, indent=4)
-
-    data_str = json.dumps(stores, indent=4)
-    data_str = 'var STORES = ' + data_str + ';'
-    with open(STORE_INFO_JS_FILE, 'w', encoding='utf8') as fd:
-        fd.write(data_str)
 
 
 def _get_stores_data() -> dict:
-    with open(STORE_INFO_FILE, 'r', encoding='utf8') as fd:
+    with open(STORES_DATA_FILE_PATH, 'r', encoding='utf8') as fd:
         return json.load(fd)
 

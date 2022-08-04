@@ -23,7 +23,7 @@ function toggle_from_submitting_to_success() {
 
 function handle_submit() {
     let upc = document.querySelector('#upc_value').value.trim();
-    let store_name = document.querySelector('#store-value').value;
+    let store_name = document.querySelector('#store-dropdown').value;
     let upc_length_error_node = document.querySelector('#upc-length-error');
     let store_error_node = document.querySelector('#store-error-message');
 
@@ -137,23 +137,23 @@ function blink_node(node_) {
 function make_dropdown_select2() {
     $(document).ready(function () {
     //change selectboxes to selectize mode to be searchable
-       $("#store-value").select2();
+       $("#store-dropdown").select2();
     });
 }
 
-function populate_dropdown() {
-    let person_select_node = document.querySelector('#person-value');
-    let stores_select_node = document.querySelector('#store-value');
+function populate_store_options() {
+    let person_select_node = document.querySelector('#person-dropdown');
+    let stores_select_node = document.querySelector('#store-dropdown');
 
-    populate_dropdown_menu(stores_select_node, CATEGORIZED_STORES[person_select_node.value]);
+    replace_store_options(stores_select_node, CATEGORIZED_STORES[person_select_node.value]);
 
     person_select_node.addEventListener( 'change', (event) => {
         let cat_ = person_select_node.value;
-        populate_dropdown_menu(stores_select_node, CATEGORIZED_STORES[cat_]);
+        replace_store_options(stores_select_node, CATEGORIZED_STORES[cat_]);
     } );
 }
 
-function populate_dropdown_menu(select_node, option_values_list) {
+function replace_store_options(select_node, option_values_list) {
     // clear select node; remove all its children nodes
     select_node.innerHTML = '';
 
@@ -215,7 +215,7 @@ function handle_manually_add_new_upc() {
 }
 
 function get_store_to_submit() {
-    return (PREVIOUS_STORE != null ? PREVIOUS_STORE : document.querySelector('#store-value').value);
+    return (PREVIOUS_STORE != null ? PREVIOUS_STORE : document.querySelector('#store-dropdown').value);
 }
 
 function submit_add_manual_upc() {
