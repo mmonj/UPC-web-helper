@@ -24,16 +24,11 @@ logger.addHandler(file_handler)
 ##
 
 
-INDEX_HTML_TEMPLATE = 'index.html'
 UPC_LOG_FORM_HTML_TEMPLATE = 'upc_log_form.html'
 TEST_TEMPLATE = '_test1.html'
 
-PDF_TITLE_STRF = '{client_name} order sheet - Crossmark.pdf'
-
-STORES_DATA_FILE_PATH = './static/data/store_info.json'
-CATEGORIZED_STORES_FILE = './static/data/stores_list_for_dropdown.json'
-
-UNIQUE_UPCS_FILE_PATH = './upc_logger/data - product images/unique_upcs.json'
+STORES_DATA_FILE_PATH = './static/data/stores_data.json'
+CATEGORIZED_STORES_FILE = './static/data/categorized_store_listings.json'
 
 app_upc_logger = Blueprint('app_upc_logger', __name__)
 
@@ -137,10 +132,21 @@ def log_form_route():
     SessionTracker.load_sessions()
 
     with open(CATEGORIZED_STORES_FILE, 'r', encoding='utf8') as fd:
-        categorized_stores = json.load(fd)
+        categorized_stores_with_info = json.load(fd)
+
+    categorized_stores = {}
+    for name, data in categorized_stores_with_info.items():
+        if name != 'All Stores':
+            categorized_stores[name] = data
+        else:
+            categorized_stores[name] = list(data.keys())
 
     upc = request.args.get('upc', '')
     ip_address = request.headers['X-Real-IP']
+    is_continue_previous_store = SessionTracker.is_continue_previous_store(ip_address)
+    previous_store = SessionTracker.get_previous_store(ip_address)
+
+    logger.info(f'User IP: {ip_address} - Continuing with previous store: {is_continue_previous_store}. Previous store: "{previous_store}"')
 
     stores = _get_stores_data()
     stores_list = [f for f in stores.keys() if f != 'all']
@@ -152,8 +158,8 @@ def log_form_route():
         UPC_LOG_FORM_HTML_TEMPLATE,
         upc=upc,
         stores=stores_list,
-        is_continue_previous_store=SessionTracker.is_continue_previous_store(ip_address),
-        previous_store=SessionTracker.get_previous_store(ip_address),
+        is_continue_previous_store=is_continue_previous_store,
+        previous_store=previous_store,
         categorized_stores=categorized_stores
     )
 
@@ -221,7 +227,8 @@ def get_barcodes_pdf_route():
     request_types_to_templates = {
         'all': '{client_name} item sheet - {item_count} items.pdf',
         'out_of_dist': '{client_name} order sheet - {date} - {store_name}.pdf',
-        'in_dist': '{client_name} in-stock sheet - {date} - {store_name}.pdf'
+        'in_dist': '{client_name} in-stock sheet - {date} - {store_name}.pdf',
+        'all_no_new_item_icon': '{client_name} item sheet - {item_count} items - {date}.pdf'
     }
 
     client_name = request.json['client_name']
@@ -229,13 +236,14 @@ def get_barcodes_pdf_route():
     shortened_store_name = request.json['shortened_store_name']
     items = request.json['items']
 
-    add_upcs_to_uniques_file(items.keys())
+    logger.info(f'> Received {len(items)} {client_name} items for store "{store_name}"')
     logger.info('Adding UPCs in bulk to json')
     store_data = _add_items_in_bulk(items.keys(), store_name)
     include_upc_time_added(items, store_data)
 
-    logger.info(f'> Received {len(items)} {client_name} items')
-
+    is_include_new_item_icon = True
+    if request.json['barcode_request_type'] == 'all_no_new_item_icon':
+        is_include_new_item_icon = False
     filename_template = request_types_to_templates[request.json['barcode_request_type']]
     filename = get_filename(client_name, shortened_store_name, len(items), filename_template)
     pdf_path = os.path.join('upc_logger/generated_pdfs', filename)
@@ -245,7 +253,7 @@ def get_barcodes_pdf_route():
     logger.info('> Logging product names')
     pdf_maker.log_product_names(items, client_name)
     logger.info('> Creating PDF')
-    pdf_maker.create_pdf_with_upcs(items, pdf_path, client_name)
+    pdf_maker.create_pdf_with_upcs(items, pdf_path, client_name, is_include_new_item_icon)
 
     logger.info('> Returning with PDF attachment')
     resp = send_file(pdf_path, as_attachment=True, cache_timeout=0)
@@ -273,18 +281,26 @@ def add_items_in_bulk_route():
     elif request.method != 'POST':
         return _corsify_actual_response( jsonify( {'message': 'Invalid request'} ) ), 400
 
+    allowed_authorization_key = 'Resent#Choosy5#Snowless'
+    received_auth_key = request.headers.get("Authorization")
+    if received_auth_key is None or received_auth_key != allowed_authorization_key:
+        return _corsify_actual_response( jsonify( {'message': 'invalid auth key'} ) ), 401
+
     store_name = request.json['store_name']
     client_name = request.json['client_name']
-    upcs = request.json['upcs']
+    upcs_received = request.json['upcs']
 
-    logger.info(f'Processing {len(upcs)} {client_name} UPCs for store "{store_name}"')
+    logger.info(f'Processing {len(upcs_received)} {client_name} UPCs for store "{store_name}"')
     this_cycle_half_start_time, next_cycle_half_start_time = pdf_maker.update_cycle_info()
 
     logger.info('Adding UPCs in bulk to json')
-    store_data = _add_items_in_bulk(upcs, store_name)
+    store_data = _add_items_in_bulk(upcs_received, store_name)
 
     new_upcs = []
     for upc, upc_data in store_data.items():
+        if upc not in upcs_received:
+            continue
+
         time_added = upc_data.get('time_added', 0)
         if this_cycle_half_start_time < time_added and time_added < next_cycle_half_start_time:
             logger.info(f'UPC "{upc}" is new; add time: {time_added}')
@@ -301,37 +317,19 @@ def add_items_in_bulk_route():
     return _corsify_actual_response( jsonify( ret_json ) )
 
 
-def add_upcs_to_uniques_file(items: list):
-    '''
-    :param items list<str>: A list of UPC numbers in order to store to database containing a unique list of UPC numbers
-    :return dict: A dict of {upc: {}} data containing associated information about the UPC number, namely a 'time_added' attribute, stored as a UNIX timestamp
-    '''
-    with open(UNIQUE_UPCS_FILE_PATH, 'r', encoding='utf8') as fd:
-        unique_upcs = json.load(fd)
-
-    for upc in items:
-        if upc not in unique_upcs:
-            unique_upcs[upc] = {'time_added': time.time()}
-
-    with open(UNIQUE_UPCS_FILE_PATH, 'w', encoding='utf8') as fd:
-        json.dump(unique_upcs, fd, indent=4)
-
-    return unique_upcs
-
-
 def include_upc_time_added(items: dict, store_data: dict):
     '''
     :param items dict: A dict of {upc: {}} data received from client-side containing UPC numbers as keys, and their associated data, which
     includes product name
     :param store_data dict: A dict of {upc: {}} data obtained from database that contains UPC numbers as keys, and
-    their associated data, which includes a 'instock' bool attribute, 'time_added' UNIX timestamp, and 'time_scanned' string as a human-readable timestamp, localized to EST timezone
+    their associated data, which includes a 'instock' bool attribute, 'time_added' UNIX timestamp, and 'date_scanned', localized to EST timezone
     '''
     for upc, data in items.items():
             data['time_added'] = store_data[upc].get('time_added', 0)
 
 
-@app_upc_logger.route("/stores_data.json", methods=["GET", "OPTIONS"])
-def get_stores_data_route():
+@app_upc_logger.route("/get-json/<filename>", methods=["GET", "OPTIONS"])
+def get_json_route(filename):
     def _corsify_this(response):
         response.headers.add("Access-Control-Allow-Origin", "*")
         response.headers.add('Content-Type', 'application/json')
@@ -341,7 +339,7 @@ def get_stores_data_route():
         return response
 
     logger.info('\n')
-    logger.info('  >> Route: stores_data_getter <<')
+    logger.info('  >> Route: get_json <<')
 
     if request.method == "OPTIONS": # CORS preflight
         logger.info('Building preflight response')
@@ -350,9 +348,16 @@ def get_stores_data_route():
         logger.info('Request method is not GET')
         return _corsify_actual_response( jsonify( {'message': 'Invalid request'} ) ), 400
 
-    logger.info('Returning with stores_data')
-    stores_data: dict = _get_stores_data()
-    return _corsify_this( jsonify(stores_data) )
+    logger.info(f'Returning with {filename}')
+
+    file_path = f'static/data/{filename}'
+    if not os.path.isfile(file_path):
+        return _corsify_actual_response( jsonify( {'message': 'Invalid request. JSON filename not found'} ) ), 400
+
+    with open(file_path, 'r', encoding='utf8') as fd:
+        data = json.load(fd)
+
+    return _corsify_this( jsonify(data) )
 
 
 def _build_cors_preflight_response():
@@ -423,7 +428,7 @@ def _remove_upc(upc: str, store_name):
     stores = _get_stores_data()
 
     stores[store_name][upc]['instock'] = False
-    logger.info(f'Changed "instock" attribute for UPC "{upc}" at store "{store_name}"')
+    logger.info(f'Changed "instock" attribute to False for UPC "{upc}" at store "{store_name}"')
 
     _update_stores_data(stores)
 
@@ -436,7 +441,7 @@ def _add_upc_from_scan(upc: str, store_name: str) -> dict:
     logger.info('>> add_upc <<')
 
     stores_data: dict = _get_stores_data()
-    ts = time.time() - (4 * 3600)
+    ts: float = time.time() - (4 * 3600)
     now: str = datetime.datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d at %I:%M:%S %p')
 
     logger.info(f'Adding {upc} to dict')
@@ -448,7 +453,7 @@ def _add_upc_from_scan(upc: str, store_name: str) -> dict:
         stores_data[store_name][upc]['time_added'] = time.time()
 
     stores_data[store_name][upc]['instock'] = True
-    stores_data[store_name][upc]['time_scanned'] = now
+    stores_data[store_name][upc]['date_scanned'] = now
 
     logger.info(f'Added to dict: key {repr(upc)}, store: {store_name}')
     _update_stores_data(stores_data)
@@ -457,6 +462,9 @@ def _add_upc_from_scan(upc: str, store_name: str) -> dict:
 def _add_items_in_bulk(upcs: list, store_name: str):
     logger.info('\n')
     logger.info('  >> _add_items_in_bulk() <<')
+
+    ts: float = time.time() - (4 * 3600)
+    now: str = datetime.datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d at %I:%M:%S %p')
 
     stores_data = _get_stores_data()
 
@@ -471,7 +479,8 @@ def _add_items_in_bulk(upcs: list, store_name: str):
 
             stores_data[store_name][upc] = {}
             stores_data[store_name][upc]['instock'] = False
-            # stores_data[store_name][upc]['time_added'] = time.time()
+            stores_data[store_name][upc]['time_added'] = time.time()
+            stores_data[store_name][upc]['date_added'] = now
 
     if is_update_occurred:
         _update_stores_data(stores_data)
