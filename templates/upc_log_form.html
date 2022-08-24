@@ -1,5 +1,6 @@
 <html>
     <head>
+        <title>UPC Logger</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
 
@@ -34,8 +35,8 @@
 
                 <label>Whose store?</label>
                 <select id="person-dropdown" method="GET" action="/">
-                    {% for category, resulting_list in categorized_stores.items() %}
-                    <option value="{{category}}">{{category}}</option>
+                    {% for name, _ in categorized_stores.items() %}
+                    <option value="{{name}}">{{name}}</option>
                     {% endfor %}
                 </select>
                 <br>
@@ -79,15 +80,15 @@
                 </div>
 
                 <div class="main-view-btn">
-                    <button type="submit" class="btn-main-menu" onclick="handle_manually_add_new_upc()">Manually Add New UPC</button>
+                    <button type="submit" class="btn-main-menu" onclick="submit_upc_removal()">Remove this UPC</button>
                     <br>
-                    <button type="submit" class="btn-main-menu" onclick="submit_upc_removal()">Remove UPC</button>
+                    <button type="submit" class="btn-main-menu" onclick="submit_reset_store_and_upc_remove()">Switch Store &amp; Remove this UPC</button>
                     <br>
-                    <button type="submit" class="btn-main-menu" onclick="submit_reset_store_and_upc_remove()">Switch Store &amp; Remove UPC</button>
+                    <button type="submit" class="btn-main-menu" onclick="handle_manually_add_new_upc()">Manually Add/Remove New UPC</button>
                     <br>
                 </div>
 
-                    <label id="upc-removed-label" style="color:red;display:none">UPC Removed. You may now go back to scanner</label>
+                    <label id="upc-removed-label" style="font-size:18px; color:red;display:none">UPC Removed. You may now go back to scanner</label>
                 <br>
             </div>
 
@@ -97,6 +98,8 @@
                     <br>
                 </div>
             </div>
+
+<!--------------------------------------------------------------------------------------------------------------------->
 
             <div id="m3-manual-buttons" style="display:none">
                 <img style="max-height:500px; max-width:500px;" class="logo" id="crossmark-logo" src="{{url_for('static', filename='images/logo-1.png')}}"/>
@@ -108,7 +111,7 @@
                 <input type="number" id="input-add-upc-manual" placeholder="UPC number (12 digits)" style="font-size:16px">
                 <br>
                 <div class="main-view-btn">
-                    <button type="submit" class="btn-manual" id="btn-new-upc-manual" onclick="submit_add_manual_upc()">Submit UPC</button>
+                    <button type="submit" class="btn-manual" id="btn-new-upc-manual" onclick="submit_add_manual_upc()">Add UPC</button>
                     <button type="submit" class="btn-manual" id="btn-remove-upc-manual" onclick="submit_remove_manual_upc()">Remove UPC</button>
                 </div>
                 <br>
@@ -118,13 +121,14 @@
         </div>
 
 <!--------------------------------------------------------------------------------------------------------------------->
+
         <script>
             var PREVIOUS_STORE = null;
         </script>
 
         {% if is_continue_previous_store %}
         <script>
-            PREVIOUS_STORE = "{{previous_store}}";
+            PREVIOUS_STORE = "{{previous_store | safe}}";
             // const queryString = window.location.search;
             // const urlParams = new URLSearchParams(queryString);
             console.log(`Previous store is "${PREVIOUS_STORE}"`);

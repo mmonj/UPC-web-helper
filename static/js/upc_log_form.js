@@ -73,10 +73,11 @@ function submit_upc(upc, store_name) {
         'store': store_name
     };
 
+    console.log(`Attempting to submit UPC "${upc}" for store "${store_name}"`);
     toggle_modal();
     let action_on_success = function() {
         update_scan_confirmation(`Saved ${upc}\n\n${store_name}`);
-        toggle_from_submitting_to_success()
+        toggle_from_submitting_to_success();
     }
 
     // alert('Mock-Main-Submit');
@@ -143,18 +144,18 @@ function make_dropdown_select2() {
 
 function populate_store_options() {
     let person_select_node = document.querySelector('#person-dropdown');
-    let stores_select_node = document.querySelector('#store-dropdown');
+    let store_select_node = document.querySelector('#store-dropdown');
 
-    replace_store_options(stores_select_node, CATEGORIZED_STORES[person_select_node.value]);
+    replace_store_options(store_select_node, person_select_node.value);
 
     person_select_node.addEventListener( 'change', (event) => {
-        let cat_ = person_select_node.value;
-        replace_store_options(stores_select_node, CATEGORIZED_STORES[cat_]);
+        replace_store_options(store_select_node, person_select_node.value);
     } );
 }
 
-function replace_store_options(select_node, option_values_list) {
+function replace_store_options(select_node, name) {
     // clear select node; remove all its children nodes
+    let stores = CATEGORIZED_STORES[name];
     select_node.innerHTML = '';
 
     // add disabled option to act as header for options dropdown
@@ -165,7 +166,7 @@ function replace_store_options(select_node, option_values_list) {
     option_node.disabled = true;
     select_node.appendChild(option_node);
 
-    for(let store of option_values_list) {
+    for(let store of stores) {
         option_node = document.createElement("option");
         option_node.textContent = store;
         option_node.value = store;
