@@ -51,19 +51,16 @@ def update_cycle_info():
     with open(file_path, 'r', encoding='utf8') as fd:
         data = json.load(fd)
 
-    this_cycle_half_start_time = data['this_cycle_half_start_time']
-    next_cycle_half_start_time = this_cycle_half_start_time + TWO_WEEKS_IN_SECONDS
+    data['next_cycle_half_start_time'] = data['this_cycle_half_start_time'] + TWO_WEEKS_IN_SECONDS
+    while data['next_cycle_half_start_time'] < time.time():
+        data['next_cycle_half_start_time'] += TWO_WEEKS_IN_SECONDS
 
-    while next_cycle_half_start_time < time.time():
-        next_cycle_half_start_time += TWO_WEEKS_IN_SECONDS
-
-    this_cycle_half_start_time = next_cycle_half_start_time - TWO_WEEKS_IN_SECONDS
-    data['this_cycle_half_start_time'] = this_cycle_half_start_time
+    data['this_cycle_half_start_time'] = data['next_cycle_half_start_time'] - TWO_WEEKS_IN_SECONDS
 
     with open(file_path, 'w', encoding='utf8') as fd:
         json.dump(data, fd, indent=4)
 
-    return this_cycle_half_start_time, this_cycle_half_start_time + TWO_WEEKS_IN_SECONDS
+    return data['this_cycle_half_start_time'], data['next_cycle_half_start_time']
 
 
 def get_new_item_image() -> object:
@@ -72,7 +69,7 @@ def get_new_item_image() -> object:
         return ImageReader(io.BytesIO( fd.read() ))
 
 
-def create_pdf_with_upcs(items: dict, pdf_path: str, client_name: str):
+def create_pdf_with_upcs(items: dict, pdf_path: str, client_name: str, is_include_new_item_icon: bool):
     pdf_canvas = canvas.Canvas(pdf_path)
     pdf_canvas.setFont("Helvetica", 11)
     # pdf_canvas.setTitle( PDF_TITLE_STRF.format(client_name=client_name) )
@@ -90,7 +87,7 @@ def create_pdf_with_upcs(items: dict, pdf_path: str, client_name: str):
     # product_names_split_list = get_product_names_split_list( list(items.values()) )
 
     writer_options = {
-        'module_height': 20,
+        'module_height': 18,
         'font_size': 10,
         'text_distance': 4.0,
         'write_text': False
@@ -100,20 +97,22 @@ def create_pdf_with_upcs(items: dict, pdf_path: str, client_name: str):
     pdf_canvas.drawImage(client_logo, 156, 770, width=10*cm, height=2.1*cm, preserveAspectRatio=True, anchor='c', mask='auto')
 
     this_cycle_half_start_time, next_cycle_half_start_time = update_cycle_info()
+
     new_item_image: object = get_new_item_image()
+    image_not_available_image = get_image_not_available_image()
 
     for i, upc in enumerate(items.keys()):
         # text_height = get_this_rows_text_height(i, product_names_split_list)
         text_height = get_this_rows_text_height(i, items)
 
-        if is_upc_new(items[upc], this_cycle_half_start_time, next_cycle_half_start_time):
-            pdf_canvas.drawImage(new_item_image, curr_x + 39, curr_y + 2.5*cm, width=max_image_width - 2.9*cm, height=max_image_height, preserveAspectRatio=True, anchor='sw', mask='auto')
-            logger.info(f'      > > > > > "{upc}" is new')
+        if is_include_new_item_icon and is_upc_new(items[upc], this_cycle_half_start_time, next_cycle_half_start_time):
+            pdf_canvas.drawImage(new_item_image, curr_x + 27, curr_y + 2.35*cm, width=max_image_width - 1.8*cm, height=max_image_height, preserveAspectRatio=True, anchor='s', mask='auto')
+            logger.info(f'> PDF maker: "{upc}" is new')
 
         product_image = get_product_image_bytes(upc, client_name)
         if product_image is None:
-            logger.info(f'Product image is None for UPC {upc}')
-            continue
+            logger.info(f'Product image is None for UPC {upc}. Using placeholder image_not_available_image')
+            product_image = image_not_available_image
 
         upc_obj = barcode.get('upc', upc, writer=barcode.writer.ImageWriter())
         barcode_image = ImageReader( upc_obj.render(writer_options=writer_options) )
@@ -153,7 +152,7 @@ def get_product_image_bytes(upc: str, client_name: str) -> object:
 
     product_image_url = get_product_image_url(upc)
     if product_image_url is None:
-        return get_image_not_available_image()
+        return None
 
     logger.info(f'Downloading "{upc}" product image "{product_image_url}"')
     try:
@@ -162,16 +161,14 @@ def get_product_image_bytes(upc: str, client_name: str) -> object:
         product_image = Image.open(io.BytesIO(resp.content))
         product_image = resize_and_trim_image(product_image)
         if product_image is None:
-            return get_image_not_available_image()
+            return None
         product_image.save(upc_image_file_path, 'JPEG')
-
         product_image = ImageReader(product_image)
 
         logger.info(f'Resized {upc} product image from url: {product_image_url}')
-
     except Exception as e:
-        logger.exception(f'  >! Exception occurred: {e}')
-        return get_image_not_available_image()
+        logger.exception(f'  >! Exception occurred while retrieving product image from url: {e}')
+        return None
 
     # with open(upc_image_file_path, 'wb') as fd:
     #     fd.write(resp.content)
