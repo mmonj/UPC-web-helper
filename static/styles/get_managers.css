@@ -1,0 +1,113 @@
+body {
+    background-color: #f5f5f5;
+    font-family: sans-serif;
+    color: #333;
+}
+
+header {
+    margin-bottom: 10px;
+    padding: 0;
+}
+
+img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+h1, h2 {
+    color: #7d7df0;
+}
+
+.container {
+    background-color: white;
+    font-size: 20px;
+    width: 80%;
+    max-width: 800px;
+    margin: auto;
+    padding: 20px;
+    text-align: center;
+/*     border: 1px solid #dadce0; */
+    border-radius: 4px;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.2), -0.1px 0px 3px rgba(0,0,0,0.01);
+}
+
+#header-container {
+    text-align: center;
+}
+
+#person-dropdown {
+    font-size: 20px;
+    width: 55%;
+    max-width: 150px;
+    text-align: center;
+    padding: 5px;
+    border-width: 1px;
+    border-radius: 4px;
+    border: 1px solid #bcbcbc;
+    border-radius: 5px;
+}
+
+.store-info {
+    margin: 20px auto 20px auto;
+    border: solid;
+    border-color: #cdcdcd;
+    border-width: 1px;
+    border-radius: 5px;
+    padding: 10px;
+    font-weight: bold;
+    width:90%;
+    max-width: 500px;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.2), -0.1px 0px 3px rgba(0,0,0,0.01);
+}
+
+.store-info > label {
+    color: #7474e1;
+}
+
+.store-info > * {
+    margin-bottom: 5px;
+}
+
+.error-msg {
+    color: red;
+    font-weight: normal;
+    font-size: 16px;
+}
+
+label {
+    display: inline-block;
+}
+
+input[type="text"] {
+    padding: 8px;
+    border-radius: 5px;
+    border-width: 1px;
+    width: 90%;
+    max-width: 300px;
+    text-align: center;
+    letter-spacing: 0.5px;
+    font-size: 16px;
+    border: 1px solid #bcbcbc;
+    border-radius: 5px;
+}
+
+input[type="text"].error {
+    border-color: red;
+}
+
+button {
+    width: 50%;
+    max-width: 200px;
+    padding: 10px;
+    font-size: 20px;
+    border-width: 0;
+    border-radius: 3px;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.2), -0.1px 0px 3px rgba(0,0,0,0.01);
+    background-color: #7474e1;
+    color: #F5F5F5;
+}
+
+button:hover {
+    cursor: pointer;
+    filter: brightness(90%);
+}

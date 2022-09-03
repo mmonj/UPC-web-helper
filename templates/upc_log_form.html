@@ -13,7 +13,7 @@
         <script type="text/javascript" src="{{url_for('static', filename='js/select2.min.js')}}"></script>
 
         <script>
-            var CATEGORIZED_STORES = JSON.parse('{{ categorized_stores | tojson | safe}}');
+            var CATEGORIZED_STORES = JSON.parse('{{categorized_stores | tojson | safe}}');
         </script>
     </head>
 
@@ -34,7 +34,7 @@
                 <br>
 
                 <label>Whose store?</label>
-                <select id="person-dropdown" method="GET" action="/">
+                <select id="person-dropdown">
                     {% for name, _ in categorized_stores.items() %}
                     <option value="{{name}}">{{name}}</option>
                     {% endfor %}

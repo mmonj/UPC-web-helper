@@ -1,0 +1,48 @@
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+        <link href="{{url_for('static', filename='styles/get_managers.css')}}"- rel="stylesheet">
+        <script type="text/javascript" src="{{url_for('static', filename='js/get_managers.js')}}"></script>
+
+        <title>Manager Form</title>
+    </head>
+
+    <body onload="update_managers_info_form(); init_eventlisteners()">
+        <header>
+            <div id="header-container" class="container">
+                <img class="logo" id="crossmark-logo" src="{{url_for('static', filename='images/logo-1.png')}}"/>
+            </div>
+        </header>
+
+        <main>
+            <div id="body-container" class="container">
+                <form id="manager_form" action="/accept_manager_info" method="post">
+                    <h2>Choose a name</h2>
+
+                    <select id="person-dropdown" name="employee-name" onchange="update_managers_info_form()">
+                        {% for name in categorized_stores.keys() %}
+                        <option value="{{name}}">{{name}}</option>
+                        {% endfor %}
+                    </select>
+                    <br>
+                    <br>
+
+                    <div id="stores-container">
+
+                    </div>
+
+                    <br>
+                    <button type="submit">Submit</button>
+                </form>
+            </div>
+        </main>
+
+        <script>
+            var ALL_STORES_DATA = JSON.parse('{{all_stores_data | tojson | safe}}');
+            var CATEGORIZED_STORES = JSON.parse('{{categorized_stores | tojson | safe}}');
+        </script>
+    </body>
+
+</html>

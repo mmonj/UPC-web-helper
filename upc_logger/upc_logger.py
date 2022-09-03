@@ -33,6 +33,92 @@ CATEGORIZED_STORES_FILE = './static/data/categorized_store_listings.json'
 app_upc_logger = Blueprint('app_upc_logger', __name__)
 
 
+@app_upc_logger.route("/managers_form")
+def managers_form_route():
+    logger.info('\n')
+    logger.info('  >> Route: managers_form <<')
+
+    template_path = 'get_managers.html'
+
+    categorized_stores = balance_categorized_stores_info()
+    all_stores_data = categorized_stores.pop('All Stores')
+
+    logger.info('Returning with HTML Response')
+    return render_template(template_path, categorized_stores=categorized_stores, all_stores_data=all_stores_data)
+
+
+def balance_categorized_stores_info():
+    with open(CATEGORIZED_STORES_FILE, 'r', encoding='utf8') as fd:
+        categorized_stores_with_info = json.load(fd)
+
+    for name, data in categorized_stores_with_info.items():
+        if name == 'All Stores':
+            continue
+
+        for store in data:
+            if store not in categorized_stores_with_info['All Stores']:
+                logger.info(f'"{store}" not in "All Stores" info')
+                categorized_stores_with_info['All Stores'][store] = {
+                    "manager_names": [
+                        "",
+                        ""
+                    ]
+                }
+
+    with open(CATEGORIZED_STORES_FILE, 'w', encoding='utf8') as fd:
+        json.dump(categorized_stores_with_info, fd, indent=4)
+
+    return categorized_stores_with_info
+
+
+def get_categorized_stores_for_log_form() -> dict:
+    with open(CATEGORIZED_STORES_FILE, 'r', encoding='utf8') as fd:
+        categorized_stores_with_info = json.load(fd)
+
+    categorized_stores = {}
+    for name, data in categorized_stores_with_info.items():
+        if name != 'All Stores':
+            categorized_stores[name] = data
+        else:
+            categorized_stores[name] = list(data.keys())
+
+    return categorized_stores
+
+
+@app_upc_logger.route("/accept_manager_info", methods=['GET', 'POST'])
+def accept_manager_info_route():
+    if request.method == 'GET':
+        return render_template('accept_manager_info.html', history_replace=False)
+
+    logger.info('\n')
+    logger.info('  >> Route: accept_manager_info <<')
+
+    with open(CATEGORIZED_STORES_FILE, 'r', encoding='utf8') as fd:
+        categorized_stores_with_info = json.load(fd)
+
+    employee_name = request.form['employee-name']
+
+    logger.info('\n')
+    for i, first_name_from_form in enumerate(request.form.getlist('first-name')):
+        store_name = categorized_stores_with_info[employee_name][i]
+        last_name_from_form = request.form.getlist('last-name')[i]
+
+        target_dict = categorized_stores_with_info['All Stores'][store_name]
+        original_full_name = target_dict['manager_names'][0] + ' ' + target_dict['manager_names'][1]
+        new_full_name = first_name_from_form + ' ' + last_name_from_form
+
+        if original_full_name != new_full_name:
+            logger.info( 'Replacing name "{}" with "{}" for store {}'.format(original_full_name, new_full_name, store_name) )
+
+        target_dict['manager_names'][0] = first_name_from_form
+        target_dict['manager_names'][1] = last_name_from_form
+
+    with open(CATEGORIZED_STORES_FILE, 'w', encoding='utf8') as fd:
+        json.dump(categorized_stores_with_info, fd, indent=4)
+
+    return render_template('accept_manager_info.html', history_replace=True)
+
+
 @app_upc_logger.route("/upc_log_form")
 def log_form_route():
     def get_previous_store_info(cookies) -> tuple:
@@ -56,27 +142,15 @@ def log_form_route():
     '''
     logger.info('\n')
     logger.info('  >> Route: log_form <<')
-    # SessionTracker.load_sessions()
 
-    with open(CATEGORIZED_STORES_FILE, 'r', encoding='utf8') as fd:
-        categorized_stores_with_info = json.load(fd)
-
-    categorized_stores = {}
-    for name, data in categorized_stores_with_info.items():
-        if name != 'All Stores':
-            categorized_stores[name] = data
-        else:
-            categorized_stores[name] = list(data.keys())
-
+    categorized_stores = get_categorized_stores_for_log_form()
     upc = request.args.get('upc', '')
 
     is_continue_previous_store, previous_store = get_previous_store_info(request.cookies)
-    logger.info(f'Continuing with previous store: {is_continue_previous_store}. Previous store: "{previous_store}"')
+    logger.info(f'Continuing with previous store: {is_continue_previous_store}')
 
     stores = _get_stores_data()
     stores_list = [f for f in stores.keys() if f != 'all']
-
-    # SessionTracker.save_sessions()
 
     logger.info('Returning with HTML response')
     return render_template(
@@ -101,7 +175,6 @@ def direct_update_route():
     logger.info('\n')
     logger.info('  >> Route: direct_update <<')
 
-    # SessionTracker.load_sessions()
     content = request.json
     logger.info(content)
     ret_data = {'message': 'Internal server did not complete intended action'}
@@ -116,7 +189,6 @@ def direct_update_route():
         ret_data['message'] = f'Added UPC {content["upc"]}'
         ret_code = 200
 
-    # SessionTracker.save_sessions()
     return jsonify( ret_data ), ret_code
 
 
