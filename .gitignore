@@ -13,3 +13,4 @@ _test*
 *.lnk
 *.log
 *.pdf
+__*
