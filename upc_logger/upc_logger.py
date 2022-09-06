@@ -40,25 +40,26 @@ def managers_form_route():
 
     template_path = 'get_managers.html'
 
-    categorized_stores = balance_categorized_stores_info()
-    all_stores_data = categorized_stores.pop('All Stores')
+    categorized_stores = balance_stores_data()
+    categorized_stores.pop('All Stores')
+    logger.info(f'categorized stores type: {type(categorized_stores)}')
 
     logger.info('Returning with HTML Response')
-    return render_template(template_path, categorized_stores=categorized_stores, all_stores_data=all_stores_data)
+    return render_template(template_path, categorized_stores=categorized_stores)
 
 
-def balance_categorized_stores_info():
+def balance_stores_data():
     with open(CATEGORIZED_STORES_FILE, 'r', encoding='utf8') as fd:
-        categorized_stores_with_info = json.load(fd)
+        stores_data = json.load(fd)
 
-    for name, data in categorized_stores_with_info.items():
+    for name, data in stores_data.items():
         if name == 'All Stores':
             continue
 
         for store in data:
-            if store not in categorized_stores_with_info['All Stores']:
+            if store not in stores_data['All Stores']:
                 logger.info(f'"{store}" not in "All Stores" info')
-                categorized_stores_with_info['All Stores'][store] = {
+                stores_data['All Stores'][store] = {
                     "manager_names": [
                         "",
                         ""
@@ -66,9 +67,9 @@ def balance_categorized_stores_info():
                 }
 
     with open(CATEGORIZED_STORES_FILE, 'w', encoding='utf8') as fd:
-        json.dump(categorized_stores_with_info, fd, indent=4)
+        json.dump(stores_data, fd, indent=4)
 
-    return categorized_stores_with_info
+    return stores_data
 
 
 def get_categorized_stores_for_log_form() -> dict:
