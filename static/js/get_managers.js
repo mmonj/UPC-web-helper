@@ -1,14 +1,34 @@
+var STORES_DATA = null;
+
+function init_store_data() {
+    let promises_ = [
+        get_json('static/data/categorized_store_listings.json')
+    ];
+
+    Promise.all(promises_).then(data => {
+        STORES_DATA = data[0];
+        update_managers_info_form();
+    })
+}
+
 function update_managers_info_form() {
     let body_div = document.querySelector('#stores-container');
     body_div.innerHTML = '';
 
     let employee_name = document.querySelector('#person-dropdown').value;
-    let store_list = CATEGORIZED_STORES[employee_name];
+    let store_list = STORES_DATA[employee_name];
 
     for (let store_name of store_list) {
-        let new_div = get_new_fieldset(store_name);
-        body_div.appendChild(new_div);
+        let new_fieldset = get_new_fieldset(store_name);
+        body_div.appendChild(new_fieldset);
     }
+}
+
+async function get_json(url) {
+  const resp = await fetch(url);
+  const _data = await resp.json();
+
+  return _data;
 }
 
 function get_new_fieldset(store_name) {
@@ -20,7 +40,7 @@ function get_new_fieldset(store_name) {
     new_label.setAttribute('name', 'store-name');
     new_label.innerText = store_name;
 
-    let [first_name, last_name] = ALL_STORES_DATA[store_name]['manager_names'];
+    let [first_name, last_name] = STORES_DATA['All Stores'][store_name]['manager_names'];
 
     let new_input1 = document.createElement('input');
     new_input1.setAttribute('type', 'text');
