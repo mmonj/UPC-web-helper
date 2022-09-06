@@ -9,7 +9,7 @@
         <title>Manager Form</title>
     </head>
 
-    <body onload="update_managers_info_form(); init_eventlisteners()">
+    <body onload="init_store_data(); init_eventlisteners()">
         <header>
             <div id="header-container" class="container">
                 <img class="logo" id="crossmark-logo" src="{{url_for('static', filename='images/logo-1.png')}}"/>
@@ -39,10 +39,6 @@
             </div>
         </main>
 
-        <script>
-            var ALL_STORES_DATA = JSON.parse('{{all_stores_data | tojson | safe}}');
-            var CATEGORIZED_STORES = JSON.parse('{{categorized_stores | tojson | safe}}');
-        </script>
     </body>
 
 </html>
