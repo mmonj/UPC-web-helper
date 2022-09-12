@@ -70,7 +70,9 @@ def get_new_item_image() -> object:
 
 
 def create_pdf_with_upcs(items: dict, pdf_path: str, client_name: str, is_include_new_item_icon: bool):
-    pdf_canvas = canvas.Canvas(pdf_path)
+    pdf_buffer = io.BytesIO()
+
+    pdf_canvas = canvas.Canvas(pdf_buffer)
     pdf_canvas.setFont("Helvetica", 11)
     # pdf_canvas.setTitle( PDF_TITLE_STRF.format(client_name=client_name) )
     pdf_canvas.setTitle( f'{client_name} sheet ({len(items)}) Crossmark' )
@@ -142,6 +144,7 @@ def create_pdf_with_upcs(items: dict, pdf_path: str, client_name: str, is_includ
             pdf_canvas.showPage()
 
     pdf_canvas.save()
+    return pdf_buffer
 
 
 def get_product_image_bytes(upc: str, client_name: str) -> object:
@@ -234,14 +237,15 @@ def lookup_upc_data(items: dict, client_name: str):
         logger.info(f'GETting UPC pair {upc_pair} product info...')
 
         if resp.ok:
-            items = resp.json().get('items')
-            if not items:
-                logger.info(f'Response json did not have "items" list for {upc_pair}')
-                continue
+            items = resp.json().get('items', [])
+            # if not items:
+            #     logger.info(f'Response json did not have "items" list for {upc_pair}')
+            #     continue
             for upc in upc_pair:
                 data = get_upc_data(upc, items)
                 if data is None:
                     logger.info(f'get_upc_data returned None for {upc} in {upc_pair}')
+                    upc_lookup_data[upc] = {}
                     continue
                 upc_lookup_data[upc] = data
         else:

@@ -5,7 +5,7 @@ import os
 import re
 import time
 import unicodedata
-from flask import Blueprint, render_template, request, send_file, jsonify, make_response
+from flask import Blueprint, render_template, request, send_file, jsonify, make_response, Response
 
 import upc_logger.pdf_maker as pdf_maker
 
@@ -195,6 +195,17 @@ def direct_update_route():
 
 @app_upc_logger.route("/barcode_getter", methods=["POST", "OPTIONS"])
 def get_barcodes_pdf_route():
+    def final_corsify(resp, filename, mimetype):
+        resp.headers.add("filename", filename)
+        resp.headers.add('mimetype', mimetype)
+
+        resp.headers.add('Access-Control-Allow-Origin', '*')
+        resp.headers.add("Access-Control-Expose-Headers", 'filename')
+        resp.headers.add("Access-Control-Expose-Headers", 'Content-Disposition')
+        resp.headers.add("Access-Control-Expose-Headers", 'mimetype')
+
+        return resp
+
     '''
     A POST endpoint that receives a JSON object of UPC numbers and associated information;
     returns a PDF document as an attachment to download client-side containing product details, barcodes and product images
@@ -242,17 +253,16 @@ def get_barcodes_pdf_route():
     logger.info('> Logging product names')
     pdf_maker.log_product_names(items, client_name)
     logger.info('> Creating PDF')
-    pdf_maker.create_pdf_with_upcs(items, pdf_path, client_name, is_include_new_item_icon)
+    pdf_buffer = pdf_maker.create_pdf_with_upcs(items, pdf_path, client_name, is_include_new_item_icon)
 
     logger.info('> Returning with PDF attachment')
-    resp = send_file(pdf_path, as_attachment=True, cache_timeout=0)
-    resp.headers.add("filename", filename)
-    resp.headers.add('Access-Control-Allow-Origin', '*')
-    resp.headers.add("Access-Control-Expose-Headers", 'filename')
-    resp.headers.add("Access-Control-Expose-Headers", 'Content-Disposition')
-    resp.headers.add('mimetype', 'application/pdf')
+    # resp = send_file(pdf_path, as_attachment=True, cache_timeout=0)
+    pdf_buffer.seek(0)
+    mimetype = 'application/pdf'
+    resp = Response(pdf_buffer.read(), mimetype=mimetype, direct_passthrough=True)
+    return final_corsify(resp, filename, mimetype)
 
-    return resp
+    # return resp
 
 
 @app_upc_logger.route("/add_items_in_bulk", methods=["POST", "OPTIONS"])
