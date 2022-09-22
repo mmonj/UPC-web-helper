@@ -211,6 +211,16 @@ function submit_reset_store_and_upc_remove() {
     post_data(payload_data, action_on_success);
 }
 
+function handle_reset_store() {
+    let payload_data = {
+        'store_reset': true,
+        'store': get_store_to_submit()
+    };
+
+    update_cookies(payload_data);
+    toggle_modal();
+}
+
 function update_cookies(payload_data) {
     document.cookie = `previous_store=${payload_data.store}; expires=Fri, 31 Dec 3999 23:59:59 GMT`;
 

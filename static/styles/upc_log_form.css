@@ -5,24 +5,29 @@
 /*background: #EBF0F5;*/
 /*}*/
 
+body {
+    margin: 0.75rem;
+}
+
 input[type=text], input[type=number], select {
     width: 100%;
-    padding: 12px 20px;
-    margin: 8px 0;
+    padding: 0.75rem 1.25rem;
+    margin: 0.5rem 0;
     display: inline-block;
     border: 1px solid #ccc;
-    border-radius: 4px;
+    border-radius: 0.25rem;
     box-sizing: border-box;
 }
 
 .btn-main-menu {
     width: 100%;
+    max-width: 600px;
     background-color: #0276FF;
     color: white;
-    padding: 14px 20px;
-    margin: 8px 0;
+    padding: 0.8rem 1.25rem;
+    margin: 0.5rem 0;
     border: none;
-    border-radius: 4px;
+    border-radius: 0.25rem;
     cursor: pointer;
 }
 
@@ -30,14 +35,26 @@ input[type=text], input[type=number], select {
     background-color: #0057bd;
 }
 
+#upc-removed-label {
+    font-size:1.15rem;
+    color: red;
+    display: none;
+}
+
+#crossmark-logo {
+    max-height: 500px;
+    max-width:500px;
+    margin-bottom: 2rem;
+}
+
 .all-container {
     max-height:1000px;
     max-width:1000px;
-    margin-left: auto;
-    margin-right: auto;
-    border-radius: 5px;
+    margin: 0 auto;
+    border-radius: 0.28rem;
     background-color: #f2f2f2;
-    padding: 20px;
+    box-shadow: 1px 1px 2px #80808085;
+    padding: 1.25rem;
 }
 .logo {
     display: block;
@@ -67,8 +84,8 @@ input[type=text], input[type=number], select {
 
 .scan-info {
     text-align: center;
-    padding: 40px 0;
-    padding-top: 20px;
+    padding: 2.5rem 0;
+    padding-top: 1.25rem;
 }
 
 .main-view-btn {
@@ -79,37 +96,41 @@ input[type=text], input[type=number], select {
     color: #88B04B;
     font-family: "Nunito Sans", "Helvetica Neue", sans-serif;
     font-weight: 700;
-    font-size: 25px;
-    margin-bottom: 10px;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.scan-confirmation-header h1 {
+    margin: 0;
 }
 
 .btn-manual {
     /*background-color: #0276FF;*/
     border: none;
-    border-radius: 5px;
+    border-radius: 0.28rem;
     color: white;
     /*width: 200px;*/
     /*height: 30px;*/
-    padding: 15px 32px;
+    padding: 1rem 2rem;
     cursor: pointer;
 }
 
 #m-upc-saved-message {
     color: #404F5E;
     font-family: "Nunito Sans", "Helvetica Neue", sans-serif;
-    font-size: 20px;
+    font-size: 1.25rem;
     margin: 0;
 }
 
 #btn-new-upc-manual {
     background-color: #0276FF;
     border: none;
-    border-radius: 40px;
+    border-radius: 2.5rem;
     /*width: 200px;*/
 /*     height: 50px; */
 /*     padding: 8px 15px; */
     cursor: pointer;
-    margin-left: 10px;
+    margin-left: 0.65rem;
 }
 
 #btn-new-upc-manual:hover {
@@ -117,11 +138,13 @@ input[type=text], input[type=number], select {
 }
 
 #btn-remove-upc-manual {
-    border-radius:40px;
+    border-radius:2.5rem;
     background-color:#f92f2f;
-    margin-left: 5px;
+    margin-left: 0.28rem;
 }
 
 #btn-remove-upc-manual:hover {
     background-color: #e03030;
 }
+
+

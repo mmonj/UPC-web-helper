@@ -20,12 +20,9 @@
     <body onload="populate_store_options(); make_dropdown_select2();">
         <div class="all-container">
             <div id="m1-store-picker" style="display:block">
-                <img style="max-height:500px; max-width:500px;" class="logo" id="crossmark-logo" src="{{url_for('static', filename='images/logo-1.png')}}"/>
-                <br>
-                <br>
+                <img class="logo" id="crossmark-logo" src="{{url_for('static', filename='images/logo-1.png')}}"/>
 
                 <label>UPC number scanned</label>
-                <br>
                 <input type="number" id="upc_value" value="{{upc}}"></input>
                 <div id="upc-length-error" style="color:red;display:none">
                     <p>Error. UPC number must be 12 digits</p>
@@ -59,8 +56,6 @@
                     <button type="submit" class="btn-main-menu" onclick="handle_submit()">Submit</button>
                 </div>
                 <br>
-                <br>
-                <br>
 
                 {{message}}
             </div>
@@ -81,14 +76,12 @@
 
                 <div class="main-view-btn">
                     <button type="submit" class="btn-main-menu" onclick="submit_upc_removal()">Remove this UPC</button>
-                    <br>
                     <button type="submit" class="btn-main-menu" onclick="submit_reset_store_and_upc_remove()">Switch Store &amp; Remove this UPC</button>
-                    <br>
-                    <button type="submit" class="btn-main-menu" onclick="handle_manually_add_new_upc()">Manually Add/Remove New UPC</button>
-                    <br>
+                    <button type="submit" class="btn-main-menu" onclick="handle_reset_store()">Switch Store</button>
+                    <button type="submit" class="btn-main-menu" onclick="handle_manually_add_new_upc()">Manually Add / Remove New UPC</button>
                 </div>
 
-                    <label id="upc-removed-label" style="font-size:18px; color:red;display:none">UPC Removed. You may now go back to scanner</label>
+                    <label id="upc-removed-label">UPC Removed. You may now go back to scanner</label>
                 <br>
             </div>
 
@@ -102,9 +95,7 @@
 <!--------------------------------------------------------------------------------------------------------------------->
 
             <div id="m3-manual-buttons" style="display:none">
-                <img style="max-height:500px; max-width:500px;" class="logo" id="crossmark-logo" src="{{url_for('static', filename='images/logo-1.png')}}"/>
-                <br>
-                <br>
+                <img class="logo" id="crossmark-logo" src="{{url_for('static', filename='images/logo-1.png')}}"/>
 
                 <label>Input a UPC Number</label>
                 <br>
