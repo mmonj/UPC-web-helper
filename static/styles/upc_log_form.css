@@ -1,12 +1,30 @@
-
-/*body {*/
-/*text-align: center;*/
-/*padding: 40px 0;*/
-/*background: #EBF0F5;*/
-/*}*/
-
 body {
     margin: 0.75rem;
+}
+
+.all-container {
+    max-height:1000px;
+    max-width:1000px;
+    margin: 0 auto;
+    border-radius: 0.28rem;
+    background-color: #f2f2f2;
+    box-shadow: 1px 1px 2px #80808085;
+    padding: 1.25rem;
+}
+
+.logo {
+    display: block;
+    max-height: 500px;
+    max-width:500px;
+    width: 100%;
+    margin-bottom: 2rem;
+    margin-left: auto;
+    margin-right: auto;
+    /*width: auto;*/
+    /*height: auto;*/
+    /*object-fit: cover;*/
+    /*width: 100%;*/
+    /*min-height: 100%;*/
 }
 
 input[type=text], input[type=number], select {
@@ -35,61 +53,10 @@ input[type=text], input[type=number], select {
     background-color: #0057bd;
 }
 
-#upc-removed-label {
-    font-size:1.15rem;
-    color: red;
-    display: none;
-}
-
-#crossmark-logo {
-    max-height: 500px;
-    max-width:500px;
-    margin-bottom: 2rem;
-}
-
-.all-container {
-    max-height:1000px;
-    max-width:1000px;
-    margin: 0 auto;
-    border-radius: 0.28rem;
-    background-color: #f2f2f2;
-    box-shadow: 1px 1px 2px #80808085;
-    padding: 1.25rem;
-}
-.logo {
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    width: 100%;
-    /*width: auto;*/
-    /*height: auto;*/
-    /*object-fit: cover;*/
-    /*width: 100%;*/
-    /*min-height: 100%;*/
-}
-
-/*.close {*/
-/*  color: #aaaaaa;*/
-/*  float: right;*/
-/*  font-size: 38px;*/
-/*  font-weight: bold;*/
-/*}*/
-
-/*.close:hover,*/
-/*.close:focus {*/
-/*  color: #000;*/
-/*  text-decoration: none;*/
-/*  cursor: pointer;*/
-/*}*/
-
 .scan-info {
     text-align: center;
     padding: 2.5rem 0;
     padding-top: 1.25rem;
-}
-
-.main-view-btn {
-    text-align: center;
 }
 
 .scan-confirmation-header {
@@ -104,22 +71,29 @@ input[type=text], input[type=number], select {
     margin: 0;
 }
 
-.btn-manual {
-    /*background-color: #0276FF;*/
-    border: none;
-    border-radius: 0.28rem;
-    color: white;
-    /*width: 200px;*/
-    /*height: 30px;*/
-    padding: 1rem 2rem;
-    cursor: pointer;
-}
-
 #m-upc-saved-message {
     color: #404F5E;
     font-family: "Nunito Sans", "Helvetica Neue", sans-serif;
     font-size: 1.25rem;
     margin: 0;
+}
+
+#upc-removed-label {
+    font-size:1.15rem;
+    color: red;
+    display: none;
+}
+
+.main-view-btn {
+    text-align: center;
+}
+
+.btn-manual {
+    border: none;
+    border-radius: 0.28rem;
+    color: white;
+    padding: 1rem 2rem;
+    cursor: pointer;
 }
 
 #btn-new-upc-manual {
