@@ -1,296 +1,7 @@
-function toggle_modal() {
-    let store_picker_node = document.querySelector('#m1-store-picker');
-    let submission_successful_node = document.querySelector('#m2-submission-successful');
-    let currently_submitting_node = document.querySelector('#m2-currently-submitting');
-
-    store_picker_node.style.display = (store_picker_node.style.display === "none" ? "block" : "none");
-    if (store_picker_node.style.display == 'none') {
-        currently_submitting_node.style.display = 'block';
-    }
-    else {
-        submission_successful_node.style.display = 'none';
-        currently_submitting_node.style.display = 'none';
-    }
-}
-
-function toggle_from_submitting_to_success() {
-    let currently_submitting_node = document.querySelector('#m2-currently-submitting');
-    let submission_successful_node = document.querySelector('#m2-submission-successful');
-
-    currently_submitting_node.style.display = 'none';
-    submission_successful_node.style.display = 'block';
-}
-
-function handle_submit() {
-    let upc = document.querySelector('#upc_value').value.trim();
-    let store_name = document.querySelector('#store-dropdown').value;
-    let upc_length_error_node = document.querySelector('#upc-length-error');
-    let store_error_node = document.querySelector('#store-error-message');
-
-    is_return = false;
-
-    if (upc.length != 12) {
-        upc_length_error_node.style.display = "block";
-        blink_node(upc_length_error_node);
-        set_upc_error_msg(upc_length_error_node, `Error. UPC number must be 12 digits, you have ${upc.length}`);
-        is_return = true;
-    }
-    else if (!is_upc_valid(upc)) {
-        upc_length_error_node.style.display = "block";
-        blink_node(upc_length_error_node);
-        set_upc_error_msg(upc_length_error_node, 'Error. The submitted UPC is invalid.');
-        is_return = true;
-    }
-    else {
-        upc_length_error_node.style.display = "none";
-    }
-
-    if (store_name == 'forbidden-value') {
-        store_error_node.style.display = 'block';
-        blink_node(store_error_node);
-        is_return = true;
-    }
-    else {
-        store_error_node.style.display = 'none';
-    }
-
-    if (is_return) {
-        return;
-    }
-
-    submit_upc(upc, store_name);
-}
-
-function submit_upc(upc, store_name) {
-    if (!is_upc_valid(upc)) {
-        console.log('"submit_upc" says: Invalid UPC');
-        return;
-    }
-
-    let payload_data = {
-        'action': 'add',
-        'upc': upc,
-        'store': store_name
-    };
-
-    console.log(`Attempting to submit UPC "${upc}" for store "${store_name}"`);
-    toggle_modal();
-
-    let action_on_success = function() {
-        update_scan_confirmation(`Saved ${upc}\n\n${store_name}`);
-        toggle_from_submitting_to_success();
-
-        console.log('Submission successful');
-        update_cookies(payload_data);
-    }
-
-    // alert('Mock-Main-Submit');
-    post_data(payload_data, action_on_success);
-}
-
-function set_upc_error_msg(upc_length_error_node, error_msg) {
-    upc_length_error_node.querySelector('p').innerHTML = error_msg;
-}
-
-function update_scan_confirmation(new_msg) {
-    document.querySelector('#m-upc-saved-message').innerText = new_msg;
-}
-
-function handle_manually_add_new_upc() {
-    document.querySelector('#m2-submission-successful').style.display = "none";
-    document.querySelector('#m3-manual-buttons').style.display = "block";
-}
-
-function get_store_to_submit() {
-    return (PREVIOUS_STORE != null ? PREVIOUS_STORE : document.querySelector('#store-dropdown').value);
-}
-
-function submit_add_manual_upc() {
-    let upc_input_node = document.querySelector('#input-add-upc-manual');
-    let upc_error_node = document.querySelector('#upc-length-error-modal');
-
-    if (!is_upc_valid_from_modal_input(upc_input_node, upc_error_node)) {
-        return;
-    }
-
-    upc_error_node.innerText = "Submitting...";
-    upc_error_node.style.color = "black";
-    upc_error_node.style.display = "block";
-
-    let payload_data = {
-        'action': 'add',
-        'upc': upc_input_node.value,
-        'store': get_store_to_submit()
-    };
-
-    let action_on_success = function() {
-        upc_error_node.innerText = `${upc_input_node.value} has successfully been submitted & logged`;
-        upc_error_node.style.color = "#88b04b";
-        upc_error_node.style.display = "block";
-        blink_node(upc_error_node);
-
-        console.log('Manual UPC submission successful')
-        update_cookies(payload_data);
-    }
-
-    // alert('Mocking Add-UPC');
-    post_data(payload_data, action_on_success);
-}
-
-function submit_remove_manual_upc() {
-    let upc_input_node = document.querySelector('#input-add-upc-manual');
-    let upc_error_node = document.querySelector('#upc-length-error-modal');
-
-    if (!is_upc_valid_from_modal_input(upc_input_node, upc_error_node)) {
-        return;
-    }
-
-    upc_error_node.innerText = "Removing...";
-    upc_error_node.style.color = "black";
-    upc_error_node.style.display = "block";
-
-    let payload_data = {
-        'action': 'remove',
-        'upc': upc_input_node.value,
-        'store': get_store_to_submit()
-    };
-
-    let action_on_success = function() {
-        upc_error_node.innerText = `${upc_input_node.value} has been removed from the scan log`;
-        upc_error_node.style.color = "red";
-        upc_error_node.style.display = "block";
-        blink_node(upc_error_node);
-
-        console.log('Manual UPC removal successful');
-        update_cookies(payload_data);
-    }
-
-    // alert('Mocking Remove-UPC');
-    post_data(payload_data, action_on_success);
-}
-
-function submit_upc_removal() {
-    let upc_input_node = document.querySelector('#upc_value');
-
-    let payload_data = {
-        'action': 'remove',
-        'upc': upc_input_node.value,
-        'store': get_store_to_submit()
-    };
-
-    let action_on_success = function() {
-        document.querySelector('#upc-removed-label').style.display = 'block';
-
-        console.log('UPC removel successful');
-        update_cookies(payload_data);
-    }
-
-    // alert('Mocking Remove-UPC');
-    post_data(payload_data, action_on_success);
-}
-
-function submit_reset_store_and_upc_remove() {
-    let upc_input_node = document.querySelector('#upc_value');
-
-    let payload_data = {
-        'action': 'remove',
-        'store_reset': true,
-        'upc': upc_input_node.value,
-        'store': get_store_to_submit()
-    };
-
-    let action_on_success = function() {
-        document.querySelector('#upc-removed-label').style.display = 'none';
-
-        toggle_modal();
-        update_scan_confirmation('');
-        update_cookies(payload_data);
-    }
-
-    // alert('Mock-reset-store-and-remove-upc');
-    post_data(payload_data, action_on_success);
-}
-
-function handle_reset_store() {
-    let payload_data = {
-        'store_reset': true,
-        'store': get_store_to_submit()
-    };
-
-    update_cookies(payload_data);
-    toggle_modal();
-}
-
-function update_cookies(payload_data) {
-    document.cookie = `previous_store=${payload_data.store}; expires=Fri, 31 Dec 3999 23:59:59 GMT`;
-
-    if ( payload_data['store_reset'] ) {
-        document.cookie = `previous_unix_log_time=0; expires=Fri, 31 Dec 3999 23:59:59 GMT`;
-    }
-    else {
-        document.cookie = `previous_unix_log_time=${ Math.floor(Date.now() / 1000) }; expires=Fri, 31 Dec 3999 23:59:59 GMT`;
-    }
-}
-
-function post_data(payload_data, action_on_success) {
-    let url = "/direct_update";
-    let xhr = new XMLHttpRequest();
-    xhr.open("POST", url, true);
-    xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-            action_on_success();
-        }
-    };
-    let str_payload = JSON.stringify(payload_data);
-    xhr.send(str_payload);
-}
-
-function is_upc_valid_from_modal_input(upc_input_node, upc_error_node) {
-    let upc_value = upc_input_node.value;
-    let check_digit = get_check_digit(upc_value);
-
-    if (upc_value.length === 11) {
-        upc_error_node.innerText = `Error. UPC number must be 12 digits, you have ${upc_value.length}.\n\nHowever, `
-            + `if these are the first ${upc_value.length} digits of the UPC number, the check digit (last digit) would `
-            + `be ${check_digit}.\n\nRemember that Clrx, KC, GM, COS, and Lav UPC numbers will start with a 0, and Yasso with an 8`;
-        upc_error_node.style.color = "red";
-        upc_error_node.style.display = "block";
-        blink_node(upc_error_node);
-
-        return false;
-    }
-    else if (upc_value.length !== 12) {
-        upc_error_node.innerText = `Error. UPC number must be 12 digits, you have ${upc_value.length}`;
-        upc_error_node.style.color = "red";
-        upc_error_node.style.display = "block";
-        blink_node(upc_error_node);
-
-        return false;
-    }
-    else if ( upc_value[upc_value.length - 1] != get_check_digit( upc_value ) ) {
-        let upc_value_11 = upc_value.slice(0, 11);
-        upc_error_node.innerText = "Error. You've input an invalid UPC number";
-        upc_error_node.style.color = "red";
-        upc_error_node.style.display = "block";
-        blink_node(upc_error_node);
-
-        return false;
-    }
-
-    return true;
-}
-
-function make_dropdown_select2() {
-    $(document).ready(function () {
-    //change selectboxes to selectize mode to be searchable
-       $("#store-dropdown").select2();
-    });
-}
-
 function populate_store_options() {
-    let person_select_node = document.querySelector('#person-dropdown');
-    let store_select_node = document.querySelector('#store-dropdown');
+    let person_select_node = document.getElementById('person-dropdown');
+    let store_select_node = document.getElementById('store-dropdown');
+    $(store_select_node).select2();
 
     replace_store_options(store_select_node, person_select_node.value);
 
@@ -320,49 +31,273 @@ function replace_store_options(select_node, name) {
     }
 }
 
-function get_check_digit(input) {
-    if (input.length != 11 && input.length != 12) {
-        return null;
+function toggle_to_submitting_mode() {
+    document.getElementById('m1-store-picker').classList.add('hidden');
+    document.getElementById('m2-currently-submitting').classList.remove('hidden');
+}
+
+function toggle_to_submission_successful_mode() {
+    document.getElementById('m2-currently-submitting').classList.add('hidden');
+    document.getElementById('m3-submission-successful').classList.remove('hidden');
+}
+
+function toggle_to_start_mode() {
+    document.getElementById('upc-removal-successful').classList.add('hidden');
+
+    document.getElementById('m3-submission-successful').classList.add('hidden');
+    document.getElementById('m1-store-picker').classList.remove('hidden');
+}
+
+function toggle_to_manual_mode() {
+    document.getElementById('upc-removal-successful').classList.add('hidden');
+
+    document.getElementById('m3-submission-successful').classList.add('hidden');
+    document.getElementById('m4-manual-buttons').classList.remove('hidden');
+    document.getElementById('manual-store-name').textContent = window.previously_submitted_store_name;
+}
+
+function handle_scan_submit() {
+    let upc_number = document.getElementById('upc-number').value.trim();
+    let store_node = document.getElementById('store-dropdown');
+    let upc_error_node = document.getElementById('upc-error');
+    let store_error_node = document.getElementById('store-error');
+
+    let is_form_bad = false;
+    let validity_info = get_upc_validity(upc_number);
+    handle_error(validity_info, upc_error_node);
+    if (!validity_info.is_valid) {
+        console.log('handle_scan_submit: invalid UPC number');
+        blink_node(upc_error_node);
+        is_form_bad = true;
     }
 
-    if (input.length == 12) {
+    validity_info = get_store_validity(store_node);
+    handle_error(validity_info, store_error_node);
+    if (!validity_info.is_valid) {
+        console.log('handle_scan_submit: invalid store');
+        blink_node(store_error_node);
+        is_form_bad = true;
+    }
+
+    if (is_form_bad) {
+        return;
+    }
+
+    console.log('handle_scan_submit: form check completed');
+    submit_upc(upc_number, store_node.value);
+}
+
+function submit_upc(upc_number, store_name) {
+    if (!is_upc_valid(upc_number)) {
+        console.log('submit_upc: invalid UPC');
+        return;
+    }
+
+    let data = {
+        'action': 'add',
+        'upc': upc_number,
+        'store': store_name
+    };
+
+    console.log(`submit_upc: attempting to POST data: UPC "${upc_number}" for store "${store_name}"`);
+    toggle_to_submitting_mode();
+
+    let action_on_success = function() {
+        console.log('POST successful');
+
+        update_scan_confirmation(upc_number, store_name);
+        toggle_to_submission_successful_mode();
+        update_cookies(data);
+        
+        window.previously_submitted_upc = upc_number;
+        window.previously_submitted_store_name = store_name;
+    }
+
+    post_data(data, action_on_success);
+}
+
+function update_scan_confirmation(upc_number, store_name) {
+    document.getElementById('upc-submitted').textContent = upc_number;
+    document.getElementById('store-name-submitted').textContent = store_name;
+}
+
+function handle_upc_removal() {
+    let payload_data = {
+        'action': 'remove',
+        'upc': window.previously_submitted_upc,
+        'store': window.previously_submitted_store_name
+    };
+
+    let action_on_success = function() {
+        let upc_removal_successful_node = document.getElementById('upc-removal-successful');
+        upc_removal_successful_node.classList.remove('hidden');
+        blink_node(upc_removal_successful_node);
+
+        console.log('UPC removal successful');
+        update_cookies(payload_data);
+    }
+
+    post_data(payload_data, action_on_success);
+}
+
+function handle_reset_store_and_upc_remove() {
+    let payload_data = {
+        'action': 'remove',
+        'store_reset': true,
+        'upc': window.previously_submitted_upc,
+        'store': window.previously_submitted_store_name
+    };
+
+    let action_on_success = function() {
+        update_cookies(payload_data);
+        toggle_to_start_mode();
+    }
+
+    post_data(payload_data, action_on_success);
+}
+
+function handle_reset_store() {
+    let data = {
+        'store_reset': true,
+        'store': window.previously_submitted_store_name
+    };
+
+    update_cookies(data);
+    toggle_to_start_mode();
+}
+
+function handle_action_manual_upc(action) {
+    let upc_number = document.getElementById('manual-upc-number').value.trim();
+    let upc_error_node = document.getElementById('manual-action-error');
+    let upc_success_node = document.getElementById('manual-action-successful');
+
+    let validity_info = get_upc_validity(upc_number);
+    handle_error(validity_info, upc_error_node, upc_success_node);
+    if (!validity_info.is_valid) {
+        console.log('handle_add_manual_upc: invalid UPC number');
+        blink_node(upc_error_node);
+        return;
+    }
+
+    let payload_data = {
+        'action': action,
+        'upc': upc_number,
+        'store': window.previously_submitted_store_name
+    };
+
+    let action_on_success = function() {
+        console.log(`Successfully POSTed "${action}" action for ${upc_number}`);
+        update_cookies(payload_data);
+        
+        upc_success_node.classList.remove('hidden');
+        blink_node(upc_success_node);
+    }
+
+    post_data(payload_data, action_on_success);
+}
+
+function get_upc_validity(upc_number) {
+    let validity_info = {
+        is_valid: true, 
+        error_message: ''
+    };
+
+    let check_digit = get_check_digit(upc_number);
+    if (check_digit == null) {
+        validity_info.error_message = `UPC number must be 12 digits, you have ${upc_number.length}`;
+        validity_info.is_valid = false;
+    }
+    else if (upc_number.length === 11) {
+        validity_info.error_message = `UPC number must be 12 digits, but if these are the first 11 digits the check digit would be ${check_digit}`;
+        validity_info.is_valid = false;
+    }
+    else if ( upc_number[upc_number.length - 1] != get_check_digit( upc_number ) ) {
+        validity_info.error_message = `Invalid UPC number. Expected ${check_digit} as the check digit`;
+        validity_info.is_valid = false;
+    }
+
+    return validity_info;
+}
+
+function get_store_validity(store_node) {
+    let validity_info = {
+        is_valid: true, 
+        error_message: ''
+    };
+
+    if (store_node.value === 'forbidden-value') {
+        validity_info.is_valid = false;
+        validity_info.error_message = 'You must choose a store';
+    }
+
+    return validity_info;
+}
+
+function get_check_digit(input) {
+    if (input.length !== 11 && input.length !== 12) {
+        return null;
+    }
+    else if (input.length === 12) {
         input = input.slice(0, 11);
     }
 
-    let array = input.split('').reverse();
-
-    let total = 0;
-    let i = 1;
-    array.forEach(number => {
-        number = parseInt(number);
-        if (i % 2 === 0) {
-            total = total + number;
-        }
-        else {
-            total = total + (number * 3);
-        }
-        i++;
-    });
-
-    let res = (Math.ceil(total / 10) * 10) - total;
-
-    // console.log(`Check digit is ${res}, type: ${typeof(res)}`);
-
-    return res;
-}
-
-function is_upc_valid(upc) {
-    if (upc.length != 12) {
-        return false;
+    let sum = 0;
+    for (let i = 0; i < input.length; ++i) {
+      if (i % 2 === 0) sum += 3 * parseInt(input[i]);
+      else sum += parseInt(input[i]);
     }
 
-    let check_digit = get_check_digit(upc);
-    return check_digit == upc[upc.length - 1];
+    return Math.ceil(sum / 10) * 10 - sum;
 }
 
-function blink_node(node_) {
-    node_.style.opacity = 0;
-    setTimeout(function() {
-        node_.style.opacity = 1;
-    }, 100);
+function is_upc_valid(upc_number) {
+    let check_digit = get_check_digit(upc_number);
+    return upc_number.length === 12 && check_digit == upc_number[upc_number.length - 1];
+}
+
+function handle_error(validity_info, error_node, success_node) {
+    if (validity_info.is_valid) {
+        error_node.classList.add('hidden');
+        return;
+    }
+
+    error_node.classList.remove('hidden');
+    error_node.textContent = validity_info.error_message;
+    if (success_node) {
+        success_node.classList.add('hidden');
+    }
+}
+
+function blink_node(node) {
+    node.classList.remove('blink');
+    setTimeout(() => {
+        node.classList.add('blink');
+    }, 250);
+}
+
+function update_cookies(data) {
+    document.cookie = `previous_store=${data.store}; expires=Fri, 31 Dec 3999 23:59:59 GMT`;
+
+    if ( data['store_reset'] ) {
+        document.cookie = `previous_unix_log_time=0; expires=Fri, 31 Dec 3999 23:59:59 GMT`;
+    }
+    else {
+        document.cookie = `previous_unix_log_time=${ Math.floor(Date.now() / 1000) }; expires=Fri, 31 Dec 3999 23:59:59 GMT`;
+    }
+}
+
+function post_data(payload_data, action_on_success) {
+    let url = "/direct_update";
+
+    let xhr = new XMLHttpRequest();
+    xhr.open("POST", url, true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            action_on_success();
+        }
+    };
+
+    xhr.send( JSON.stringify(payload_data) );
 }
