@@ -31,7 +31,7 @@
                     <strong id="upc-error" class="error-message alert hidden"></strong>
                 </div>
                 <div class="sub-section-1">
-                    <label for="person-dropdown">Whose store?</label>
+                    <label for="person-dropdown">Employee</label>
                     <select id="person-dropdown">
                         {% for name, _ in categorized_stores.items() %}
                         <option value="{{name}}">{{name}}</option>
@@ -39,7 +39,7 @@
                     </select>
                 </div>
                 <div class="sub-section-1">
-                    <label for="store-dropdown">Select a store</label>
+                    <label for="store-dropdown">Store</label>
                     <select id="store-dropdown"></select>
                     <strong id="store-error" class="error-message alert hidden"></strong>
                 </div>
@@ -76,12 +76,12 @@
                     <h1 id="manual-store-name"></h1>
                 </div>
                 <div class="sub-section-1">
-                    <label for="manual-upc-number">Input a UPC Number</label>
+                    <label for="manual-upc-number">UPC Number</label>
                     <input type="number" id="manual-upc-number">
                 </div>
                 <div class="sub-section-1">
-                    <button onclick="handle_action_manual_upc('add')">Add UPC</button>
-                    <button onclick="handle_action_manual_upc('remove')">Remove UPC</button>
+                    <button onclick="handle_action_manual_upc('add')">Add this UPC</button>
+                    <button onclick="handle_action_manual_upc('remove')">Remove this UPC</button>
                     <strong id="manual-action-successful" class="success-message alert hidden">UPC submitted successfully</strong>
                     <strong id="manual-action-error" class="error-message alert hidden"></strong>
                 </div>
