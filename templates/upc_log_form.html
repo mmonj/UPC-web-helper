@@ -1,134 +1,102 @@
 <html>
     <head>
-        <title>UPC Logger</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <title>UPC Logger</title>
         <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
 
-        <link href="{{url_for('static', filename='styles/upc_log_form.css')}}" rel="stylesheet">
-
-        <script type="text/javascript" src="{{url_for('static', filename='js/upc_log_form.js')}}"></script>
-
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
         <link href="{{url_for('static', filename='styles/select2.min.css')}}" rel="stylesheet">
+        <link href="{{url_for('static', filename='styles/upc_log_form.css')}}" rel="stylesheet">
+        
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
         <script type="text/javascript" src="{{url_for('static', filename='js/select2.min.js')}}"></script>
+        <script type="text/javascript" src="{{url_for('static', filename='js/upc_log_form.js')}}"></script>
 
         <script>
             var CATEGORIZED_STORES = JSON.parse('{{categorized_stores | tojson | safe}}');
         </script>
     </head>
-
-    <body onload="populate_store_options(); make_dropdown_select2();">
-        <div class="all-container">
-            <div id="m1-store-picker" style="display:block">
-                <img class="logo" src="{{url_for('static', filename='images/logo-1.png')}}"/>
-
-                <label>UPC number scanned</label>
-                <input type="number" id="upc_value" value="{{upc}}"></input>
-                <div id="upc-length-error" style="color:red;display:none">
-                    <p>Error. UPC number must be 12 digits</p>
+    <body onload="populate_store_options();">
+        <header class="main-view">
+            <img src="{{url_for('static', filename='images/logo-1.png')}}"/>
+        </header>
+        <main class="main-view">
+            <section id="m1-store-picker">
+                <div class="sub-section-1">
+                    <label for="upc-number">UPC number scanned</label>
+                    <input type="number" id="upc-number" value="{{upc}}">
+                    <strong id="upc-error" class="error-message alert hidden"></strong>
                 </div>
-                <br>
-                <br>
-
-                <label>Whose store?</label>
-                <select id="person-dropdown">
-                    {% for name, _ in categorized_stores.items() %}
-                    <option value="{{name}}">{{name}}</option>
-                    {% endfor %}
-                </select>
-                <br>
-                <br>
-
-
-                <label>Select a store</label>
-                <br>
-                <select required id="store-dropdown">
-                </select>
-                <br>
-
-                <div id="store-error-message" style="color:red;display:none">
-                    <p>Error. You must choose a store</p>
+                <div class="sub-section-1">
+                    <label for="person-dropdown">Whose store?</label>
+                    <select id="person-dropdown">
+                        {% for name, _ in categorized_stores.items() %}
+                        <option value="{{name}}">{{name}}</option>
+                        {% endfor %}
+                    </select>
                 </div>
-                <br>
-                <br>
-
-                <div class="main-view-btn">
-                    <button type="submit" class="btn-main-menu" onclick="handle_submit()">Submit</button>
+                <div class="sub-section-1">
+                    <label for="store-dropdown">Select a store</label>
+                    <select id="store-dropdown"></select>
+                    <strong id="store-error" class="error-message alert hidden"></strong>
                 </div>
-                <br>
-
-                {{message}}
-            </div>
-
-    <!--------------------------------------------------------------------------------------------------------------------->
-
-            <div id="m2-submission-successful" style="display:none">
-                <!--<div class="modal-content">-->
-                <!--<span class="close" onclick="toggle_modal();">&times;</span>-->
-                <!--</div>-->
-
-                <div id="scan-confirmation-block" class="scan-info" style="display:block">
-                    <div class="scan-confirmation-header">
-                        <h1>Submitted Successfully</h1>
-                    </div>
-                    <p id="m-upc-saved-message"></p>
+                <div class="sub-section-1">
+                    <button onclick="handle_scan_submit()">Submit</button>
                 </div>
+            </section>
 
-                <div class="main-view-btn">
-                    <button type="submit" class="btn-main-menu" onclick="submit_upc_removal()">Remove this UPC</button>
-                    <button type="submit" class="btn-main-menu" onclick="submit_reset_store_and_upc_remove()">Switch Store &amp; Remove this UPC</button>
-                    <button type="submit" class="btn-main-menu" onclick="handle_reset_store()">Switch Store</button>
-                    <button type="submit" class="btn-main-menu" onclick="handle_manually_add_new_upc()">Manually Add / Remove New UPC</button>
-                </div>
-
-                    <label id="upc-removed-label">UPC Removed. You may now go back to scanner</label>
-                <br>
-            </div>
-
-            <div id="m2-currently-submitting" style="display:none">
-                <div class="scan-info">
+            <section id="m2-currently-submitting" class="hidden">
+                <div class="sub-section-1 sub-section-header">
                     <h1>Submitting...</h1>
-                    <br>
+                    <p>Attempting to connect to server</p>
                 </div>
-            </div>
+            </section>
 
-<!--------------------------------------------------------------------------------------------------------------------->
-
-            <div id="m3-manual-buttons" style="display:none">
-                <img class="logo" src="{{url_for('static', filename='images/logo-1.png')}}"/>
-
-                <label>Input a UPC Number</label>
-                <br>
-                <input type="number" id="input-add-upc-manual" placeholder="UPC number (12 digits)" style="font-size:16px">
-                <br>
-                <div class="main-view-btn">
-                    <button type="submit" class="btn-manual" id="btn-new-upc-manual" onclick="submit_add_manual_upc()">Add UPC</button>
-                    <button type="submit" class="btn-manual" id="btn-remove-upc-manual" onclick="submit_remove_manual_upc()">Remove UPC</button>
+            <section id="m3-submission-successful" class="hidden">
+                <div id="scan-info" class="sub-section-1 sub-section-header">
+                    <h1>Submission Successful</h1>
+                    <p>Saved <span id="upc-submitted" class="submitted-data"></span></p>
+                    <p id="store-name-submitted" class="submitted-data"></p>
                 </div>
-                <br>
+                <div class="sub-section-1">
+                    <button onclick="handle_upc_removal()">Remove this UPC</button>
+                    <button onclick="handle_reset_store_and_upc_remove()">Switch Store &amp; Remove this UPC</button>
+                    <button onclick="handle_reset_store()">Switch Store</button>
+                    <button onclick="toggle_to_manual_mode()">Manually Add / Remove New UPC</button>
+                </div>
+                <strong id="upc-removal-successful" class="success-message alert hidden">UPC Removed. You may now go back to scanner</strong>
+            </section>
 
-                <p><span id="upc-length-error-modal" style="display:none; transition:0.08s; font-size:18;">Error. UPC number must be 12 digits</span></p>
-            </div>
-        </div>
-
-<!--------------------------------------------------------------------------------------------------------------------->
+            <section id="m4-manual-buttons" class="hidden">
+                <div class="sub-section-1 sub-section-header">
+                    <label>Manual submission mode for</label>
+                    <h1 id="manual-store-name"></h1>
+                </div>
+                <div class="sub-section-1">
+                    <label for="manual-upc-number">Input a UPC Number</label>
+                    <input type="number" id="manual-upc-number">
+                </div>
+                <div class="sub-section-1">
+                    <button onclick="handle_action_manual_upc('add')">Add UPC</button>
+                    <button onclick="handle_action_manual_upc('remove')">Remove UPC</button>
+                    <strong id="manual-action-successful" class="success-message alert hidden">UPC submitted successfully</strong>
+                    <strong id="manual-action-error" class="error-message alert hidden"></strong>
+                </div>
+            </section>
+        </main>
 
         <script>
-            var PREVIOUS_STORE = null;
-        </script>
-
+            window.previously_submitted_store_name = 'TEST';
         {% if is_continue_previous_store %}
-        <script>
-            PREVIOUS_STORE = "{{previous_store | safe}}";
-            // const queryString = window.location.search;
-            // const urlParams = new URLSearchParams(queryString);
-            console.log(`Previous store is "${PREVIOUS_STORE}"`);
-            submit_upc("{{upc}}", PREVIOUS_STORE);
-        </script>
+            window.previously_submitted_store_name = "{{previous_store | safe}}";
+            console.log(`Previous store from cookies is "${window.previously_submitted_store_name}"`);
+            submit_upc("{{upc}}", window.previously_submitted_store_name);
         {% else %}
-        <script>
             console.log('is_continue_previous_store is False');
-        </script>
         {% endif %}
+        </script>
     </body>
 </html>
