@@ -6,6 +6,7 @@ store_info.json
 static/data/**
 static/images/**
 venv/**
+.venv
 templates/_test*
 upc_logger/generated_pdfs/**
 _test*
